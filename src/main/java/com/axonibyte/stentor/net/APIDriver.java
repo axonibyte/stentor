@@ -41,10 +41,8 @@ import com.axonibyte.stentor.log.Logger;
 import com.axonibyte.stentor.net.auth.AuthTokenManager;
 import com.axonibyte.stentor.net.restful.CreateUserEndpoint;
 import com.axonibyte.stentor.net.restful.Endpoint;
-import com.axonibyte.stentor.net.restful.GetConfigEndpoint;
 import com.axonibyte.stentor.net.restful.HTTPMethod;
 import com.axonibyte.stentor.net.restful.ModifyUserEndpoint;
-import com.axonibyte.stentor.net.restful.SetConfigEndpoint;
 
 /**
  * API Driver; manages RESTful and WebSocket API endpoints.
@@ -75,9 +73,7 @@ public class APIDriver implements Runnable {
     
     endpoints = new Endpoint[] {
         new CreateUserEndpoint(),
-        new GetConfigEndpoint(),
-        new ModifyUserEndpoint(),
-        new SetConfigEndpoint()
+        new ModifyUserEndpoint()
     };
     
     staticFiles.location(RESPONDER_STATIC_FOLDER); // relative to the root of the classpath
