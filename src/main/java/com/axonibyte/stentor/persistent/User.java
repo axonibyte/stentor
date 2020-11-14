@@ -23,9 +23,29 @@ import com.lambdaworks.crypto.SCryptUtil;
  */
 public class User {
   
+  /**
+   * Database key associated with the username.
+   */
+  public static final String USERNAME_KEY = "username";
+  
+  /**
+   * Database key associated with the email.
+   */
+  public static final String EMAIL_KEY = "email";
+  
+  /**
+   * Database key associated with the password hash.
+   */
+  public static final String PHASH_KEY = "phash";
+  
+  /**
+   * Database key associated with the user's unique identifier.
+   */
+  public static final String ID_KEY = "id";
+  
   private static String passwordSalt = "";
   
-  private UUID uid = null;
+  private UUID id = null;
   private String email = null;
   private String username = null;
   private String pHash = null;
@@ -45,17 +65,17 @@ public class User {
    * @return the UUID associated with the user
    */
   public UUID getID() {
-    return uid;
+    return id;
   }
   
   /**
    * Sets the user's unique ID.
    * 
-   * @param uid the UUID associated with the user
+   * @param id the UUID associated with the user
    * @return this User
    */
-  public User setID(UUID uid) {
-    this.uid = uid;
+  public User setID(UUID id) {
+    this.id = id;
     return this;
   }
   

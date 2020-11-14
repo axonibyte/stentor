@@ -12,11 +12,14 @@
  */
 package com.axonibyte.stentor.persistent;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 
 import org.bson.Document;
-import org.json.JSONObject;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -31,7 +34,7 @@ import com.mongodb.client.model.Filters;
 public class Database {
   
   private static String DB_NAME = "v2cDashboard";
-  private static String COLLECTION_CONFIG = "config";
+  private static String COLLECTION_ARTICLE = "article";
   private static String COLLECTION_USER = "user";
   
   private MongoClient mongoClient = null;
@@ -46,82 +49,78 @@ public class Database {
   }
   
   /**
-   * Retrieves the global configuration.
+   * Retrieves a particular article by ID if it exists.
    * 
-   * @return a JSON object representing the global config
+   * @param id the unique identifier of the article
+   * @return the resulting author, or {@code null} if no such article exists
    */
-  public JSONObject getGlobalConfig() {
+  public Article getArticleByID(UUID id) {
     MongoDatabase database = mongoClient.getDatabase(DB_NAME);
-    MongoCollection<Document> collection = database.getCollection(COLLECTION_CONFIG);
-    Document document = collection.find(Filters.eq("global", true)).first();
-    if(document == null)
-      return new JSONObject();
-    else return new JSONObject(document.getString("config"));
+    MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
+    Document document = collection.find(Filters.eq(Article.ID_KEY, id.toString())).first();
+    if(document != null) return new Article()
+        .setTitle(document.getString(Article.TITLE_KEY))
+        .setContent(document.getString(Article.CONTENT_KEY))
+        .setTimestamp(document.getLong(Article.TIMESTAMP_KEY))
+        .setAuthor(UUID.fromString(document.getString(Article.AUTHOR_KEY)))
+        .setID(UUID.fromString(document.getString(Article.ID_KEY)));
+    return null;
   }
   
   /**
-   * Sets the global configuration.
+   * Retrieves all articles, in descending order by timestamp.
    * 
-   * @param config the global configuration
+   * @return a list of articles in descending order by timestamp
    */
-  public void setGlobalConfig(JSONObject config) {
+  public List<Article> getArticles() {
     MongoDatabase database = mongoClient.getDatabase(DB_NAME);
-    MongoCollection<Document> collection = database.getCollection(COLLECTION_CONFIG);
-    Document document = new Document("global", true)
-        .append("config", config.toString());
-    if(collection.find(Filters.eq("global", true)).first() == null)
+    MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
+    FindIterable<Document> documents = collection.find().sort(new BasicDBObject(Article.TIMESTAMP_KEY, -1));
+    List<Article> articles = new LinkedList<>();
+    for(Document document : documents)
+      articles.add(new Article()
+          .setTitle(document.getString(Article.TITLE_KEY))
+          .setContent(document.getString(Article.CONTENT_KEY))
+          .setTimestamp(document.getLong(Article.TIMESTAMP_KEY))
+          .setAuthor(UUID.fromString(document.getString(Article.AUTHOR_KEY)))
+          .setID(UUID.fromString(document.getString(Article.ID_KEY))));
+    return articles;
+  }
+  
+  /**
+   * Replaces an article, or creates oneif it does not already exist.
+   * 
+   * @param article the new article
+   */
+  public void setArticle(Article article) {
+    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
+    String id = article.getID().toString();
+    Document document = new Document(Article.ID_KEY, id)
+        .append(Article.TITLE_KEY, article.getTitle())
+        .append(Article.CONTENT_KEY, article.getContent())
+        .append(Article.TIMESTAMP_KEY, article.getTimestamp())
+        .append(Article.AUTHOR_KEY, article.getAuthor().toString());
+    if(collection.find(Filters.eq(Article.ID_KEY, id)).first() == null)
       collection.insertOne(document);
-    else
-      collection.replaceOne(Filters.eq("global", true), document);
-  }
-  
-  /**
-   * Retrieves configuration data for a particular user.
-   * 
-   * @param uid the unique identifier of the user
-   * @return the JSON object describing the user's configuration data
-   */
-  public JSONObject getUserConfig(UUID uid) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
-    MongoCollection<Document> collection = database.getCollection(COLLECTION_CONFIG);
-    Document document = collection.find(Filters.eq("uid", uid.toString())).first();
-    if(document != null) return new JSONObject(document.getString("config"));
-    return new JSONObject();
-  }
-  
-  /**
-   * Sets the configuration data for a particular user.
-   * 
-   * @param uid the unique identifier of the user
-   * @param config the JSON object describing the user's configuration data
-   */
-  public void setUserConfig(UUID uid, JSONObject config) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
-    MongoCollection<Document> collection = database.getCollection(COLLECTION_CONFIG);
-    Document document = new Document("global", false)
-        .append("uid", uid.toString())
-        .append("config", config.toString());
-    if(collection.find(Filters.eq("uid", uid.toString())).first() == null)
-      collection.insertOne(document);
-    else
-      collection.replaceOne(Filters.eq("uid", uid.toString()), document);
+    else collection.replaceOne(Filters.eq(Article.ID_KEY, id), document);
   }
   
   /**
    * Retrieves a particular user's profile by ID if it exists.
    * 
-   * @param uid the unique identifier of the user
-   * @return the resulting user, or <code>null</code> if no such user exists
+   * @param id the unique identifier of the user
+   * @return the resulting user, or {@code null} if no such user exists
    */
-  public User getUserProfileByID(UUID uid) {
+  public User getUserProfileByID(UUID id) {
     MongoDatabase database = mongoClient.getDatabase(DB_NAME);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
-    Document document = collection.find(Filters.eq("uid", uid.toString())).first();
+    Document document = collection.find(Filters.eq(User.ID_KEY, id.toString())).first();
     if(document != null) return new User()
-        .setEmail(document.getString("email"))
-        .setUsername(document.getString("username"))
-        .setPasswordHash(document.getString("phash"))
-        .setID(UUID.fromString(document.getString("uid")));
+        .setEmail(document.getString(User.EMAIL_KEY))
+        .setUsername(document.getString(User.USERNAME_KEY))
+        .setPasswordHash(document.getString(User.PHASH_KEY))
+        .setID(UUID.fromString(document.getString(User.ID_KEY)));
     return null;
   }
   
@@ -134,12 +133,12 @@ public class Database {
   public User getUserProfileByEmail(String email) {
     MongoDatabase database = mongoClient.getDatabase(DB_NAME);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
-    Document document = collection.find(Filters.eq("email", email)).first();
+    Document document = collection.find(Filters.eq(User.EMAIL_KEY, email)).first();
     if(document != null) return new User()
-        .setEmail(document.getString("email"))
-        .setUsername(document.getString("username"))
-        .setPasswordHash(document.getString("phash"))
-        .setID(UUID.fromString(document.getString("uid")));
+        .setEmail(document.getString(User.EMAIL_KEY))
+        .setUsername(document.getString(User.USERNAME_KEY))
+        .setPasswordHash(document.getString(User.PHASH_KEY))
+        .setID(UUID.fromString(document.getString(User.ID_KEY)));
     return null;
   }
   
@@ -152,12 +151,12 @@ public class Database {
   public User getUserProfileByUsername(String username) {
     MongoDatabase database = mongoClient.getDatabase(DB_NAME);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
-    Document document = collection.find(Filters.eq("username", username)).first();
+    Document document = collection.find(Filters.eq(User.USERNAME_KEY, username)).first();
     if(document != null) return new User()
-        .setEmail(document.getString("email"))
-        .setUsername(document.getString("username"))
-        .setPasswordHash(document.getString("phash"))
-        .setID(UUID.fromString(document.getString("uid")));
+        .setEmail(document.getString(User.EMAIL_KEY))
+        .setUsername(document.getString(User.USERNAME_KEY))
+        .setPasswordHash(document.getString(User.PHASH_KEY))
+        .setID(UUID.fromString(document.getString(User.ID_KEY)));
     return null;
   }
   
@@ -169,14 +168,14 @@ public class Database {
   public void setUserProfile(User user) {
     MongoDatabase database = mongoClient.getDatabase(DB_NAME);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
-    String uid = user.getID().toString();
-    Document document = new Document("uid", uid)
-        .append("email", user.getEmail())
-        .append("username", user.getUsername())
-        .append("phash", user.getPasswordHash());
-    if(collection.find(Filters.eq("uid", uid)).first() == null)
+    String id = user.getID().toString();
+    Document document = new Document(User.ID_KEY, id)
+        .append(User.EMAIL_KEY, user.getEmail())
+        .append(User.USERNAME_KEY, user.getUsername())
+        .append(User.PHASH_KEY, user.getPasswordHash());
+    if(collection.find(Filters.eq(User.ID_KEY, id)).first() == null)
       collection.insertOne(document);
-    else collection.replaceOne(Filters.eq("uid", uid), document);
+    else collection.replaceOne(Filters.eq(User.ID_KEY, id), document);
   }
 
 }
