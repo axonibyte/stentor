@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.log.Logger;
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthToken;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthTokenManager;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.log.Logger;
+import com.axonibyte.stentor.net.APIVersion;
+import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.net.auth.AuthTokenManager;
+
 import spark.Request;
 import spark.Response;
 
@@ -117,7 +118,7 @@ public abstract class Endpoint {
           request.requestMethod(),
           request.pathInfo()));
       
-      AuthToken authToken = V2CDashboardBackend.getAuthTokenManager().authorize(request);
+      AuthToken authToken = Stentor.getAuthTokenManager().authorize(request);
       if(authToken.getUser() != null) response.header(AuthTokenManager.OUTGOING_USER_HEADER, authToken.getUser().getID().toString());
       
       return doEndpointTask(request, response, authToken).toString(2) + '\n';

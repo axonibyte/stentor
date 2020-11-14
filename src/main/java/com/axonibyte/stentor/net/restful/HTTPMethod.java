@@ -12,7 +12,7 @@
  * 
  * THIS FILE HAS BEEN MODIFIED. ORIGINAL WORK ADHERES TO THE FOLLOWING NOTICE.
  * 
- * Copyright (c) 2020 Axonibyte Innovations, LLC. All rights reserved.
+ * Copyright (c) 2019 Axonibyte Innovations, LLC. All rights reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -26,59 +26,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.axonibyte.stentor.net.restful;
 
-package edu.uco.cs.v2c.dashboard.backend.net;
+import java.util.function.BiConsumer;
 
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
+import spark.Route;
 
 /**
- * The version of the API.
+ * HTTP request methods.
  * 
  * @author Caleb L. Power
  */
-public enum APIVersion {
+public enum HTTPMethod {
   
   /**
-   * Major version 1 of the API
+   * HTTP DELETE method.
    */
-  VERSION_1(1),
+  DELETE(spark.Spark::delete),
   
   /**
-   * Unknown version of the API
+   * HTTP GET method.
    */
-  UNKNOWN_VERSION(0);
+  GET(spark.Spark::get),
   
-  private int val;
+  /**
+   * HTTP PATCH method.
+   */
+  PATCH(spark.Spark::patch),
   
-  private APIVersion(int val) {
-    this.val = val;
+  /**
+   * HTTP POST method.
+   */
+  POST(spark.Spark::post),
+  
+  /**
+   * HTTP PUT method.
+   */
+  PUT(spark.Spark::put);
+  
+  private BiConsumer<String, Route> sparkMethod = null;
+  
+  private HTTPMethod(BiConsumer<String, Route> sparkMethod) {
+    this.sparkMethod = sparkMethod;
   }
   
   /**
-   * Determines the API version from some string
+   * Retrieves the Spark method associated with this HTTPMethod.
    * 
-   * @param val the string value of the API
-   * @return the appropriate APIVersion object
+   * @return the appropriate BiConsumer
    */
-  public static APIVersion fromString(String val) {
-    try {
-      int v = Integer.parseInt(
-          val.length() > 1 && val.toLowerCase().charAt(0) == 'v'
-              ? val.substring(1) : val);
-      for(APIVersion ver : APIVersion.values())
-        if(ver.val == v) return ver;
-    } catch(NumberFormatException e) { }
-    
-    return UNKNOWN_VERSION;
-  }
-  
-  /**
-   * Determines the numerical major version of the API.
-   * 
-   * @return some integer denoting the API
-   */
-  public int getVal() {
-    return val;
+  public BiConsumer<String, Route> getSparkMethod() {
+    return sparkMethod;
   }
   
 }

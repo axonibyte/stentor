@@ -10,17 +10,18 @@
  * See the License for the specific language governing permissions 
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
 import java.util.UUID;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthToken;
-import edu.uco.cs.v2c.dashboard.backend.persistent.User;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.net.APIVersion;
+import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.persistent.User;
+
 import spark.Request;
 import spark.Response;
 
@@ -52,7 +53,7 @@ public class ModifyUserEndpoint extends Endpoint {
       } catch(IllegalArgumentException e) { }
       
       User user = null;
-      user = uid == null ? null : V2CDashboardBackend.getDatabase().getUserProfileByID(uid);
+      user = uid == null ? null : Stentor.getDatabase().getUserProfileByID(uid);
       if(user == null) throw new EndpointException(req, "User not found.", 404);
       
       if(!authToken.getUser().getID().equals(uid))
@@ -64,17 +65,17 @@ public class ModifyUserEndpoint extends Endpoint {
       String password = request.has("password") ? request.getString("password") : null;
       
       if(!email.equalsIgnoreCase(user.getEmail())
-          && V2CDashboardBackend.getDatabase().getUserProfileByEmail(email) != null)
+          && Stentor.getDatabase().getUserProfileByEmail(email) != null)
         throw new EndpointException(req, "Email already exists.", 409);
       
       if(!username.equalsIgnoreCase(user.getUsername())
-          && V2CDashboardBackend.getDatabase().getUserProfileByUsername(username) != null)
+          && Stentor.getDatabase().getUserProfileByUsername(username) != null)
         throw new EndpointException(req, "Username already exists.", 409);
       
       if(password != null) user.setPassword(password);
       user.setEmail(email).setUsername(username);
       
-      V2CDashboardBackend.getDatabase().setUserProfile(user);
+      Stentor.getDatabase().setUserProfile(user);
       
       res.status(202);
       return new JSONObject()

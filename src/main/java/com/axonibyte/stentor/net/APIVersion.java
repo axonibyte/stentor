@@ -12,7 +12,7 @@
  * 
  * THIS FILE HAS BEEN MODIFIED. ORIGINAL WORK ADHERES TO THE FOLLOWING NOTICE.
  * 
- * Copyright (c) 2019 Axonibyte Innovations, LLC. All rights reserved.
+ * Copyright (c) 2020 Axonibyte Innovations, LLC. All rights reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -26,57 +26,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
 
-import java.util.function.BiConsumer;
+package com.axonibyte.stentor.net;
 
-import spark.Route;
+import com.axonibyte.stentor.net.APIVersion;
 
 /**
- * HTTP request methods.
+ * The version of the API.
  * 
  * @author Caleb L. Power
  */
-public enum HTTPMethod {
+public enum APIVersion {
   
   /**
-   * HTTP DELETE method.
+   * Major version 1 of the API
    */
-  DELETE(spark.Spark::delete),
+  VERSION_1(1),
   
   /**
-   * HTTP GET method.
+   * Unknown version of the API
    */
-  GET(spark.Spark::get),
+  UNKNOWN_VERSION(0);
   
-  /**
-   * HTTP PATCH method.
-   */
-  PATCH(spark.Spark::patch),
+  private int val;
   
-  /**
-   * HTTP POST method.
-   */
-  POST(spark.Spark::post),
-  
-  /**
-   * HTTP PUT method.
-   */
-  PUT(spark.Spark::put);
-  
-  private BiConsumer<String, Route> sparkMethod = null;
-  
-  private HTTPMethod(BiConsumer<String, Route> sparkMethod) {
-    this.sparkMethod = sparkMethod;
+  private APIVersion(int val) {
+    this.val = val;
   }
   
   /**
-   * Retrieves the Spark method associated with this HTTPMethod.
+   * Determines the API version from some string
    * 
-   * @return the appropriate BiConsumer
+   * @param val the string value of the API
+   * @return the appropriate APIVersion object
    */
-  public BiConsumer<String, Route> getSparkMethod() {
-    return sparkMethod;
+  public static APIVersion fromString(String val) {
+    try {
+      int v = Integer.parseInt(
+          val.length() > 1 && val.toLowerCase().charAt(0) == 'v'
+              ? val.substring(1) : val);
+      for(APIVersion ver : APIVersion.values())
+        if(ver.val == v) return ver;
+    } catch(NumberFormatException e) { }
+    
+    return UNKNOWN_VERSION;
+  }
+  
+  /**
+   * Determines the numerical major version of the API.
+   * 
+   * @return some integer denoting the API
+   */
+  public int getVal() {
+    return val;
   }
   
 }

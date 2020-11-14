@@ -26,7 +26,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net;
+package com.axonibyte.stentor.net;
 
 import static spark.Spark.before;
 import static spark.Spark.get;
@@ -37,14 +37,14 @@ import static spark.Spark.stop;
 
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.log.Logger;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthTokenManager;
-import edu.uco.cs.v2c.dashboard.backend.net.restful.CreateUserEndpoint;
-import edu.uco.cs.v2c.dashboard.backend.net.restful.Endpoint;
-import edu.uco.cs.v2c.dashboard.backend.net.restful.GetConfigEndpoint;
-import edu.uco.cs.v2c.dashboard.backend.net.restful.HTTPMethod;
-import edu.uco.cs.v2c.dashboard.backend.net.restful.ModifyUserEndpoint;
-import edu.uco.cs.v2c.dashboard.backend.net.restful.SetConfigEndpoint;
+import com.axonibyte.stentor.log.Logger;
+import com.axonibyte.stentor.net.auth.AuthTokenManager;
+import com.axonibyte.stentor.net.restful.CreateUserEndpoint;
+import com.axonibyte.stentor.net.restful.Endpoint;
+import com.axonibyte.stentor.net.restful.GetConfigEndpoint;
+import com.axonibyte.stentor.net.restful.HTTPMethod;
+import com.axonibyte.stentor.net.restful.ModifyUserEndpoint;
+import com.axonibyte.stentor.net.restful.SetConfigEndpoint;
 
 /**
  * API Driver; manages RESTful and WebSocket API endpoints.

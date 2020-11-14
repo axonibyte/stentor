@@ -10,14 +10,15 @@
  * See the License for the specific language governing permissions 
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthToken;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.net.APIVersion;
+import com.axonibyte.stentor.net.auth.AuthToken;
+
 import spark.Request;
 import spark.Response;
 
@@ -50,10 +51,10 @@ public class SetConfigEndpoint extends Endpoint {
       if(request.has("user")) userConfig = request.getJSONObject("user");
       
       if(globalConfig != null)
-        V2CDashboardBackend.getDatabase().setGlobalConfig(globalConfig);
+        Stentor.getDatabase().setGlobalConfig(globalConfig);
       
       if(userConfig != null)
-        V2CDashboardBackend.getDatabase().setUserConfig(
+        Stentor.getDatabase().setUserConfig(
             authToken.getUser().getID(), userConfig);
       
       res.status(202);

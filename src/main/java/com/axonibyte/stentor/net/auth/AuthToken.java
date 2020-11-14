@@ -26,9 +26,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.auth;
+package com.axonibyte.stentor.net.auth;
 
-import edu.uco.cs.v2c.dashboard.backend.persistent.User;
+import com.axonibyte.stentor.persistent.User;
 
 /**
  * Represents a user's authentication token.

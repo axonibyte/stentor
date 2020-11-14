@@ -10,17 +10,18 @@
  * See the License for the specific language governing permissions 
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
 import java.util.UUID;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthToken;
-import edu.uco.cs.v2c.dashboard.backend.persistent.User;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.net.APIVersion;
+import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.persistent.User;
+
 import spark.Request;
 import spark.Response;
 
@@ -48,17 +49,17 @@ public class CreateUserEndpoint extends Endpoint {
       String username = request.getString("username");
       String password = request.getString("password");
       
-      if(V2CDashboardBackend.getDatabase().getUserProfileByEmail(email) != null)
+      if(Stentor.getDatabase().getUserProfileByEmail(email) != null)
         throw new EndpointException(req, "Email already exists.", 409);
       
-      if(V2CDashboardBackend.getDatabase().getUserProfileByUsername(username) != null)
+      if(Stentor.getDatabase().getUserProfileByUsername(username) != null)
         throw new EndpointException(req, "Username already exists.", 409);
       
       UUID uuid = null;
       do uuid = UUID.randomUUID();
-      while(V2CDashboardBackend.getDatabase().getUserProfileByID(uuid) != null);
+      while(Stentor.getDatabase().getUserProfileByID(uuid) != null);
       
-      V2CDashboardBackend.getDatabase().setUserProfile(new User()
+      Stentor.getDatabase().setUserProfile(new User()
           .setEmail(email)
           .setUsername(username)
           .setPassword(password)

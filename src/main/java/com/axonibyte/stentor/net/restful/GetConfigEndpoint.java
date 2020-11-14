@@ -10,13 +10,14 @@
  * See the License for the specific language governing permissions 
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthToken;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.net.APIVersion;
+import com.axonibyte.stentor.net.auth.AuthToken;
+
 import spark.Request;
 import spark.Response;
 
@@ -39,13 +40,13 @@ public class GetConfigEndpoint extends Endpoint {
    */
   @Override public JSONObject doEndpointTask(Request req, Response res, AuthToken authToken) throws EndpointException {
     JSONObject response = new JSONObject()
-        .put("global", V2CDashboardBackend.getDatabase().getGlobalConfig())
+        .put("global", Stentor.getDatabase().getGlobalConfig())
         .put("status", "ok")
         .put("info", "Configs retrieved.");
     
     if(authToken.hasClientPerms()) {
       authorize(authToken, req, res);
-      response.put("user", V2CDashboardBackend.getDatabase().getUserConfig(authToken.getUser().getID()));
+      response.put("user", Stentor.getDatabase().getUserConfig(authToken.getUser().getID()));
     }
     
     res.status(200);

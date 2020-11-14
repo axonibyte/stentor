@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions 
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.persistent;
+package com.axonibyte.stentor.persistent;
 
 import java.util.UUID;
 

@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions 
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend;
+package com.axonibyte.stentor;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -25,10 +25,11 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 
-import edu.uco.cs.v2c.dashboard.backend.log.Logger;
-import edu.uco.cs.v2c.dashboard.backend.net.APIDriver;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthTokenManager;
-import edu.uco.cs.v2c.dashboard.backend.persistent.Database;
+import com.axonibyte.stentor.log.Logger;
+import com.axonibyte.stentor.net.APIDriver;
+import com.axonibyte.stentor.net.auth.AuthTokenManager;
+import com.axonibyte.stentor.persistent.Database;
+import com.axonibyte.stentor.persistent.User;
 
 /**
  * V2C Dispatcher.
@@ -36,17 +37,20 @@ import edu.uco.cs.v2c.dashboard.backend.persistent.Database;
  * 
  * @author Caleb L. Power
  */
-public class V2CDashboardBackend {
+public class Stentor {
   
   private static final String LOG_LABEL = "DISPATCHER CORE";
   
   private static final int DEFAULT_PORT = 2586;
   private static final String DEFAULT_DATABASE = "127.0.0.1:27017";
+  private static final String DEFAULT_PASSWORD_SALT = "0a486beb-d953-4620-95c7-c99689fb228b";
   private static final String DEFAULT_PSK = "484dd6d1-9262-4975-a707-4238e08ed266";
   private static final String DB_PARAM_LONG = "database";
   private static final String DB_PARAM_SHORT = "d";
   private static final String PORT_PARAM_LONG = "port";
   private static final String PORT_PARAM_SHORT = "p";
+  private static final String PASSWORD_SALT_PARAM_LONG = "password-salt";
+  private static final String PASSWORD_SALT_PARAM_SHORT = "s";
   private static final String PSK_PARAM_LONG = "preshared-key";
   private static final String PSK_PARAM_SHORT = "k";
 
@@ -68,6 +72,8 @@ public class V2CDashboardBackend {
           "Specifies the server's listening port. Default = " + DEFAULT_PORT);
       options.addOption(PSK_PARAM_SHORT, PSK_PARAM_LONG, true,
           "Specifies the preshared key for authentication. Default = " + DEFAULT_PSK);
+      options.addOption(PASSWORD_SALT_PARAM_SHORT, PASSWORD_SALT_PARAM_LONG, true,
+          "Specified the salt used to build user password hashes. Default = " + DEFAULT_PASSWORD_SALT);
       CommandLineParser parser = new DefaultParser();
       CommandLine cmd = parser.parse(options, args);
       
@@ -79,6 +85,9 @@ public class V2CDashboardBackend {
             
       final String psk = cmd.hasOption(PSK_PARAM_LONG)
           ? cmd.getOptionValue(PSK_PARAM_LONG) : DEFAULT_PSK;
+          
+      User.setPasswordSalt(cmd.hasOption(PASSWORD_SALT_PARAM_LONG)
+          ? cmd.getOptionValue(PASSWORD_SALT_PARAM_LONG) : DEFAULT_PASSWORD_SALT);
           
       Logger.onInfo(LOG_LABEL, "Connecting to database...");
       database = new Database(dbConnection);
@@ -118,7 +127,7 @@ public class V2CDashboardBackend {
       if(file.canRead())
         inputStream = new FileInputStream(file);
       else
-        inputStream = V2CDashboardBackend.class.getResourceAsStream(resource);
+        inputStream = Stentor.class.getResourceAsStream(resource);
       if(inputStream == null) return null;
       InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
       BufferedReader reader = new BufferedReader(streamReader);

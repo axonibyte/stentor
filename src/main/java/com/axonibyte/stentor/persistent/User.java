@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions 
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.persistent;
+package com.axonibyte.stentor.persistent;
 
 import java.util.UUID;
 
@@ -23,12 +23,21 @@ import com.lambdaworks.crypto.SCryptUtil;
  */
 public class User {
   
-  private String PASSWORD_SALT = "0a486beb-d953-4620-95c7-c99689fb228b";
+  private static String passwordSalt = "";
   
   private UUID uid = null;
   private String email = null;
   private String username = null;
   private String pHash = null;
+  
+  /**
+   * Sets the password salt to be used when building or verifying passwords.
+   * 
+   * @param passwordSalt the password salt
+   */
+  public static void setPasswordSalt(String passwordSalt) {
+    User.passwordSalt = passwordSalt;
+  }
   
   /**
    * Retrieves the user's unique ID.
@@ -117,7 +126,7 @@ public class User {
    * @return this User
    */
   public User setPassword(String password) {
-    return setPasswordHash(SCryptUtil.scrypt(password + PASSWORD_SALT, 16, 16, 16));
+    return setPasswordHash(SCryptUtil.scrypt(password + passwordSalt, 16, 16, 16));
   }
   
   /**
@@ -128,7 +137,7 @@ public class User {
    */
   public boolean verifyPassword(String password) {
     try {
-      return SCryptUtil.check(password + PASSWORD_SALT, pHash);
+      return SCryptUtil.check(password + passwordSalt, pHash);
     } catch(IllegalArgumentException e) {
       e.printStackTrace();
       return false;

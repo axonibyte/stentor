@@ -26,7 +26,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.auth;
+package com.axonibyte.stentor.net.auth;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -40,10 +40,10 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.log.Logger;
+import com.axonibyte.stentor.persistent.User;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.log.Logger;
-import edu.uco.cs.v2c.dashboard.backend.persistent.User;
 import spark.Request;
 
 /**
@@ -103,7 +103,7 @@ public class AuthTokenManager {
         if(idx + 1 < authorizationData.length()) {
           email = authorizationData.substring(0, idx);
           password = authorizationData.substring(idx + 1);
-          User user = V2CDashboardBackend.getDatabase().getUserProfileByEmail(email);
+          User user = Stentor.getDatabase().getUserProfileByEmail(email);
           if(user != null && user.verifyPassword(password)) {
             token = new AuthToken().setUser(user);
             UUID uuid = null;

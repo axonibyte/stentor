@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
-import edu.uco.cs.v2c.dashboard.backend.net.restful.EndpointException;
+import com.axonibyte.stentor.net.restful.EndpointException;
+
 import spark.Request;
 
 /**
