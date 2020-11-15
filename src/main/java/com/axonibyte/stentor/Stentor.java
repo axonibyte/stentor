@@ -162,7 +162,7 @@ public class Stentor {
         if(user == null)
           System.out.println("That user doesn't exist.");
         else {
-          String password = new String(System.console().readLine("Enter password: "));
+          String password = new String(System.console().readPassword("Enter password: "));
           user.setPassword(password);
           database.setUserProfile(user);
           System.out.println("User saved!");
