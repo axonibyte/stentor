@@ -36,7 +36,7 @@ import com.mongodb.client.model.Filters;
  */
 public class Database {
   
-  private static String DB_NAME = "v2cDashboard";
+  private static String DB_NAME = "stentor";
   private static String COLLECTION_ARTICLE = "article";
   private static String COLLECTION_USER = "user";
   

@@ -37,8 +37,7 @@ import com.axonibyte.stentor.persistent.Database;
 import com.axonibyte.stentor.persistent.User;
 
 /**
- * V2C Dispatcher.
- * Handles V2C Platform network workflow.
+ * Stentor minimal blog backend.
  * 
  * @author Caleb L. Power
  */

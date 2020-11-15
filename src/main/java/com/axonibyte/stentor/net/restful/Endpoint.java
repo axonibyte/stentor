@@ -84,7 +84,7 @@ public abstract class Endpoint {
    */
   public static void authorize(AuthToken authToken, Request request, Response response) throws EndpointException {
     if(!authToken.hasClientPerms()) {
-      response.header("WWW-Authenticate", "V2C realm=dashboard");
+      response.header("WWW-Authenticate", "Stentor realm=blog");
       throw new EndpointException(request, "User is not logged in.", 401);
     }
   }

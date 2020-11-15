@@ -43,17 +43,17 @@ public class AuthTokenManager {
   /**
    * Denotes the header that will contain the session key if used properly.
    */
-  public static final String INCOMING_SESSION_HEADER = "X-V2C-Session";
+  public static final String INCOMING_SESSION_HEADER = "X-Stentor-Session";
   
   /**
    * Denotes the header in which the session key will be contained, if the user is authenticated.
    */
-  public static final String OUTGOING_SESSION_HEADER = "X-V2C-CSRF";
+  public static final String OUTGOING_SESSION_HEADER = "X-Stentor-CSRF";
   
   /**
    * Denotes the header in which the user's ID will be contained, if the user is authenticated.
    */
-  public static final String OUTGOING_USER_HEADER = "X-V2C-User";
+  public static final String OUTGOING_USER_HEADER = "X-Stentor-User";
   
   private Algorithm algorithm = null;
   private Map<String, AuthToken> sessionKeys = null;
@@ -83,7 +83,7 @@ public class AuthTokenManager {
     if(authorizationHeader != null) {
       String email = null;
       String password = null;
-      int idx = authorizationHeader.indexOf("V2C ") + 4;
+      int idx = authorizationHeader.indexOf("Stentor ") + 8;
       if(idx < authorizationHeader.length()) try {
         String authorizationData = new String(Base64.decode(authorizationHeader.substring(idx)));
         idx = authorizationData.indexOf(":", idx + 1);
@@ -115,7 +115,7 @@ public class AuthTokenManager {
       if(sessionCookie != null) {
         try {
           JWTVerifier verifier = JWT.require(algorithm)
-              .withIssuer("V2C")
+              .withIssuer("Stentor")
               .build();
           DecodedJWT jwt = verifier.verify(sessionCookie);
           
@@ -157,7 +157,7 @@ public class AuthTokenManager {
    */
   public String generateCookie(AuthToken token) {
     return JWT.create()
-        .withIssuer("V2C")
+        .withIssuer("Stentor")
         .withClaim("sessionKey", token.getSessionKey())
         .sign(algorithm);
   }
