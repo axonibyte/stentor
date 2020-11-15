@@ -43,6 +43,8 @@ public class CreateUserEndpoint extends Endpoint {
    * {@inheritDoc}
    */
   @Override public JSONObject doEndpointTask(Request req, Response res, AuthToken authToken) throws EndpointException {
+    authorize(authToken, req, res); // require user to be logged in
+    
     try {
       JSONObject request = new JSONObject(req.body());
       String email = request.getString("email");
