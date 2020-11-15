@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
+import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -56,6 +58,10 @@ public class Stentor {
   private static final String PASSWORD_SALT_PARAM_SHORT = "s";
   private static final String PSK_PARAM_LONG = "preshared-key";
   private static final String PSK_PARAM_SHORT = "k";
+  private static final String ADD_ADMIN_PARAM_LONG = "add-admin";
+  private static final String ADD_ADMIN_PARAM_SHORT = "a";
+  private static final String RESET_PASSWORD_PARAM_LONG = "reset-password";
+  private static final String RESET_PASSWORD_PARAM_SHORT = "r";
 
   private static APIDriver aPIDriver = null; // the front end
   private static AuthTokenManager authTokenManager = null; // the auth token manager
@@ -69,6 +75,10 @@ public class Stentor {
   public static void main(String[] args) {
     try {
       Options options = new Options();
+      options.addOption(ADD_ADMIN_PARAM_SHORT, ADD_ADMIN_PARAM_LONG, false,
+          "Adds an administrator and exits.");
+      options.addOption(RESET_PASSWORD_PARAM_SHORT, RESET_PASSWORD_PARAM_LONG, false,
+          "Resets a user's password.");
       options.addOption(CONFIG_PARAM_SHORT, CONFIG_PARAM_LONG, true,
           "Specifies the location of the configuration file. Default = NULL");
       options.addOption(DB_PARAM_SHORT, DB_PARAM_LONG, true,
@@ -109,22 +119,67 @@ public class Stentor {
               : (config != null && config.has(PASSWORD_SALT_PARAM_LONG)
                   ? config.getString(PASSWORD_SALT_PARAM_LONG)
                       : DEFAULT_PASSWORD_SALT));
-          
+
       Logger.onInfo(LOG_LABEL, "Connecting to database...");
       database = new Database(dbConnection);
       
-      Logger.onInfo(LOG_LABEL, "Spinning up API driver...");
-      aPIDriver = APIDriver.build(port, "*"); // configure the front end
-      authTokenManager = new AuthTokenManager(psk);
-  
-      // catch CTRL + C
-      Runtime.getRuntime().addShutdownHook(new Thread() {
-        @Override public void run() {
-          Logger.onInfo(LOG_LABEL, "Shutting off API driver...");
-          aPIDriver.halt();
-          Logger.onInfo(LOG_LABEL, "Goodbye! ^_^");
+      if(cmd.hasOption(ADD_ADMIN_PARAM_LONG)) {
+        User user = new User();
+        
+        for(;;) {
+          String username = new String(System.console().readLine("Enter username: "));
+          if(Stentor.getDatabase().getUserProfileByUsername(username) == null) {
+            user.setUsername(username);
+            break;
+          }
+          System.out.println("That username already exists in the database!");
         }
-      });
+        
+        for(;;) {
+          String email = new String(System.console().readLine("Enter email: "));
+          if(Stentor.getDatabase().getUserProfileByEmail(email) == null) {
+            user.setEmail(email);
+            break;
+          }
+          System.out.println("That email already exists in the database!");
+        }
+        
+        String password = new String(System.console().readPassword("Enter password: "));
+        user.setPassword(password);
+        
+        UUID uuid = null;
+        do uuid = UUID.randomUUID();
+        while(Stentor.getDatabase().getUserProfileByID(uuid) != null);
+        user.setID(uuid);
+        
+        database.setUserProfile(user);
+        System.out.println("User created.");
+        
+      } else if(cmd.hasOption(RESET_PASSWORD_PARAM_LONG)) {
+        String username = new String(System.console().readLine("Enter username: "));
+        User user = database.getUserProfileByUsername(username);
+        if(user == null)
+          System.out.println("That user doesn't exist.");
+        else {
+          String password = new String(System.console().readLine("Enter password: "));
+          user.setPassword(password);
+          database.setUserProfile(user);
+          System.out.println("User saved!");
+        }
+      } else {
+        Logger.onInfo(LOG_LABEL, "Spinning up API driver...");
+        aPIDriver = APIDriver.build(port, "*"); // configure the front end
+        authTokenManager = new AuthTokenManager(psk);
+    
+        // catch CTRL + C
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+          @Override public void run() {
+            Logger.onInfo(LOG_LABEL, "Shutting off API driver...");
+            aPIDriver.halt();
+            Logger.onInfo(LOG_LABEL, "Goodbye! ^_^");
+          }
+        });
+      }
     } catch(Exception e) {
       Logger.onError(LOG_LABEL, "Some exception was thrown during launch: " + e.getMessage());
     }
