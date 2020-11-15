@@ -107,6 +107,17 @@ public class Database {
   }
   
   /**
+   * Deletes an article from the database.
+   * 
+   * @param article the article's unique identifier
+   */
+  public void deleteArticle(UUID article) {
+    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
+    collection.deleteMany(Filters.eq(Article.ID_KEY, article.toString()));
+  }
+  
+  /**
    * Retrieves a particular user's profile by ID if it exists.
    * 
    * @param id the unique identifier of the user
@@ -176,6 +187,17 @@ public class Database {
     if(collection.find(Filters.eq(User.ID_KEY, id)).first() == null)
       collection.insertOne(document);
     else collection.replaceOne(Filters.eq(User.ID_KEY, id), document);
+  }
+  
+  /**
+   * Deletes a user profile from the database.
+   * 
+   * @param user the unique identifier of the user profile
+   */
+  public void deleteUserProfile(UUID user) {
+    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
+    collection.deleteMany(Filters.eq(User.ID_KEY, user.toString()));
   }
 
 }

@@ -36,7 +36,7 @@ public class ModifyUserEndpoint extends Endpoint {
    * Instantiates the endpoint.
    */
   public ModifyUserEndpoint() {
-    super("/users/:uid", APIVersion.VERSION_1, HTTPMethod.PATCH);
+    super("/users/:user", APIVersion.VERSION_1, HTTPMethod.PATCH);
   }
   
   /**
@@ -46,17 +46,17 @@ public class ModifyUserEndpoint extends Endpoint {
     authorize(authToken, req, res); // require user to be logged in
     
     try {
-      UUID uid = null;
+      UUID id = null;
       
       try {
-        uid = UUID.fromString(req.params("uid"));
+        id = UUID.fromString(req.params("user"));
       } catch(IllegalArgumentException e) { }
       
       User user = null;
-      user = uid == null ? null : Stentor.getDatabase().getUserProfileByID(uid);
+      user = id == null ? null : Stentor.getDatabase().getUserProfileByID(id);
       if(user == null) throw new EndpointException(req, "User not found.", 404);
       
-      if(!authToken.getUser().getID().equals(uid))
+      if(!authToken.getUser().getID().equals(id))
         throw new EndpointException(req, "Access denied.", 403);
       
       JSONObject request = new JSONObject(req.body());
