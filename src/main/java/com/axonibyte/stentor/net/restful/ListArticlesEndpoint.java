@@ -71,7 +71,8 @@ public class ListArticlesEndpoint extends Endpoint {
       
       JSONObject response = new JSONObject()
           .put(Endpoint.STATUS_KEY, "ok")
-          .put(Endpoint.INFO_KEY, "Retrieved articles.");
+          .put(Endpoint.INFO_KEY, "Retrieved articles.")
+          .put("articles", articles);
       if(!articles.isEmpty())
         response.put("next", limit + 1);
       
