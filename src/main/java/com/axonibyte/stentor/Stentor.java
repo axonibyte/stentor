@@ -24,6 +24,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
+import org.json.JSONObject;
 
 import com.axonibyte.stentor.log.Logger;
 import com.axonibyte.stentor.net.APIDriver;
@@ -45,6 +46,8 @@ public class Stentor {
   private static final String DEFAULT_DATABASE = "127.0.0.1:27017";
   private static final String DEFAULT_PASSWORD_SALT = "0a486beb-d953-4620-95c7-c99689fb228b";
   private static final String DEFAULT_PSK = "484dd6d1-9262-4975-a707-4238e08ed266";
+  private static final String CONFIG_PARAM_LONG = "config-file";
+  private static final String CONFIG_PARAM_SHORT = "c";
   private static final String DB_PARAM_LONG = "database";
   private static final String DB_PARAM_SHORT = "d";
   private static final String PORT_PARAM_LONG = "port";
@@ -66,6 +69,8 @@ public class Stentor {
   public static void main(String[] args) {
     try {
       Options options = new Options();
+      options.addOption(CONFIG_PARAM_SHORT, CONFIG_PARAM_LONG, true,
+          "Specifies the location of the configuration file. Default = NULL");
       options.addOption(DB_PARAM_SHORT, DB_PARAM_LONG, true,
           "Specifies the target database server. Default = " + DEFAULT_DATABASE);
       options.addOption(PORT_PARAM_SHORT, PORT_PARAM_LONG, true,
@@ -77,17 +82,33 @@ public class Stentor {
       CommandLineParser parser = new DefaultParser();
       CommandLine cmd = parser.parse(options, args);
       
+      JSONObject config = null;
+      if(cmd.hasOption(CONFIG_PARAM_LONG))
+        config = new JSONObject(readResource(cmd.getOptionValue(CONFIG_PARAM_LONG)));
+      
       final int port = cmd.hasOption(PORT_PARAM_LONG)
-          ? Integer.parseInt(cmd.getOptionValue(PORT_PARAM_LONG)) : DEFAULT_PORT;
+          ? Integer.parseInt(cmd.getOptionValue(PORT_PARAM_LONG))
+              : (config != null && config.has(PORT_PARAM_LONG)
+                  ? config.getInt(PORT_PARAM_LONG)
+                      : DEFAULT_PORT);
           
       final String dbConnection = cmd.hasOption(DB_PARAM_LONG)
-          ? cmd.getOptionValue(DB_PARAM_LONG) : DEFAULT_DATABASE;
+          ? cmd.getOptionValue(DB_PARAM_LONG)
+              : (config != null && config.has(DB_PARAM_LONG)
+                  ? config.getString(DB_PARAM_LONG)
+                      : DEFAULT_DATABASE);
             
       final String psk = cmd.hasOption(PSK_PARAM_LONG)
-          ? cmd.getOptionValue(PSK_PARAM_LONG) : DEFAULT_PSK;
+          ? cmd.getOptionValue(PSK_PARAM_LONG)
+              : (config != null && config.has(PSK_PARAM_LONG)
+                  ? config.getString(PSK_PARAM_LONG)
+                      : DEFAULT_PSK);
           
       User.setPasswordSalt(cmd.hasOption(PASSWORD_SALT_PARAM_LONG)
-          ? cmd.getOptionValue(PASSWORD_SALT_PARAM_LONG) : DEFAULT_PASSWORD_SALT);
+          ? cmd.getOptionValue(PASSWORD_SALT_PARAM_LONG)
+              : (config != null && config.has(PASSWORD_SALT_PARAM_LONG)
+                  ? config.getString(PASSWORD_SALT_PARAM_LONG)
+                      : DEFAULT_PASSWORD_SALT));
           
       Logger.onInfo(LOG_LABEL, "Connecting to database...");
       database = new Database(dbConnection);
