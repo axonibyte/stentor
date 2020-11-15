@@ -45,16 +45,16 @@ public class ModifyArticleEndpoint extends Endpoint {
       if(article == null) throw new EndpointException(req, "Article not found.", 404);
       
       JSONObject request = new JSONObject(req.body());
-      String title = request.has("title") ? request.getString("title") : article.getTitle();
-      String content = request.has("content") ? request.getString("content") : article.getContent();
+      String title = request.has(Article.TITLE_KEY) ? request.getString(Article.TITLE_KEY) : article.getTitle();
+      String content = request.has(Article.CONTENT_KEY) ? request.getString(Article.CONTENT_KEY) : article.getContent();
       
       article.setContent(content).setTitle(title);
       Stentor.getDatabase().setArticle(article);
       
       res.status(202);
       return new JSONObject()
-          .put("status", "ok")
-          .put("info", "User updated.");
+          .put(Endpoint.STATUS_KEY, "ok")
+          .put(Endpoint.INFO_KEY, "User updated.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);

@@ -39,6 +39,11 @@ public class User {
   public static final String PHASH_KEY = "phash";
   
   /**
+   * JSON key associated with a plaintext password.
+   */
+  public static final String PASSWORD_KEY = "password";
+  
+  /**
    * Database key associated with the user's unique identifier.
    */
   public static final String ID_KEY = "id";

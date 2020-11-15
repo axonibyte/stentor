@@ -41,8 +41,8 @@ public class GetArticleEndpoint extends Endpoint {
       throw new EndpointException(req, "Article not found.", 404);
     
     return new JSONObject()
-        .put("status", "ok")
-        .put("info", "Retrieved article.")
+        .put(Endpoint.STATUS_KEY, "ok")
+        .put(Endpoint.INFO_KEY, "Retrieved article.")
         .put(Article.ID_KEY, article.getID().toString())
         .put(Article.TITLE_KEY, article.getTitle())
         .put(Article.CONTENT_KEY, article.getContent())

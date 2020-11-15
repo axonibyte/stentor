@@ -35,8 +35,8 @@ public class CreateArticleEndpoint extends Endpoint {
     
     try {
       JSONObject request = new JSONObject(req.body());
-      String title = request.getString("title");
-      String content = request.getString("content");
+      String title = request.getString(Article.TITLE_KEY);
+      String content = request.getString(Article.CONTENT_KEY);
       
       UUID uuid = null;
       do uuid = UUID.randomUUID();
@@ -51,8 +51,8 @@ public class CreateArticleEndpoint extends Endpoint {
       
       res.status(201);
       return new JSONObject()
-          .put("status", "ok")
-          .put("info", "Article created.");
+          .put(Endpoint.STATUS_KEY, "ok")
+          .put(Endpoint.INFO_KEY, "Article created.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);

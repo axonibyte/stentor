@@ -47,9 +47,9 @@ public class CreateUserEndpoint extends Endpoint {
     
     try {
       JSONObject request = new JSONObject(req.body());
-      String email = request.getString("email");
-      String username = request.getString("username");
-      String password = request.getString("password");
+      String email = request.getString(User.EMAIL_KEY);
+      String username = request.getString(User.USERNAME_KEY);
+      String password = request.getString(User.PASSWORD_KEY);
       
       if(Stentor.getDatabase().getUserProfileByEmail(email) != null)
         throw new EndpointException(req, "Email already exists.", 409);
@@ -69,8 +69,8 @@ public class CreateUserEndpoint extends Endpoint {
       
       res.status(201);
       return new JSONObject()
-          .put("status", "ok")
-          .put("info", "User created.");
+          .put(Endpoint.STATUS_KEY, "ok")
+          .put(Endpoint.INFO_KEY, "User created.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);

@@ -60,9 +60,9 @@ public class ModifyUserEndpoint extends Endpoint {
         throw new EndpointException(req, "Access denied.", 403);
       
       JSONObject request = new JSONObject(req.body());
-      String email = request.has("email") ? request.getString("email") : user.getEmail();
-      String username = request.has("username") ? request.getString("username") : user.getUsername();
-      String password = request.has("password") ? request.getString("password") : null;
+      String email = request.has(User.EMAIL_KEY) ? request.getString(User.EMAIL_KEY) : user.getEmail();
+      String username = request.has(User.USERNAME_KEY) ? request.getString(User.USERNAME_KEY) : user.getUsername();
+      String password = request.has(User.PASSWORD_KEY) ? request.getString(User.PASSWORD_KEY) : null;
       
       if(!email.equalsIgnoreCase(user.getEmail())
           && Stentor.getDatabase().getUserProfileByEmail(email) != null)
@@ -79,8 +79,8 @@ public class ModifyUserEndpoint extends Endpoint {
       
       res.status(202);
       return new JSONObject()
-          .put("status", "ok")
-          .put("info", "User updated.");
+          .put(Endpoint.STATUS_KEY, "ok")
+          .put(Endpoint.INFO_KEY, "User updated.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);

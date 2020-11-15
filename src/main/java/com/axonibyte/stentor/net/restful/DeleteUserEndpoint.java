@@ -44,8 +44,8 @@ public class DeleteUserEndpoint extends Endpoint {
     
     res.status(202);
     return new JSONObject()
-        .put("status", "ok")
-        .put("info", "User deleted.");
+        .put(Endpoint.STATUS_KEY, "ok")
+        .put(Endpoint.INFO_KEY, "User deleted.");
   }
   
 }
