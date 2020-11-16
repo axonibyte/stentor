@@ -69,7 +69,7 @@ public class ModifyArticleEndpoint extends Endpoint {
       res.status(202);
       return new JSONObject()
           .put(Endpoint.STATUS_KEY, "ok")
-          .put(Endpoint.INFO_KEY, "User updated.");
+          .put(Endpoint.INFO_KEY, "Article updated.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);

@@ -54,7 +54,7 @@ public class ListArticlesEndpoint extends Endpoint {
         throw new EndpointException(req, "Syntax error.", 400);
       
       List<Article> articles = Stentor.getDatabase().getArticles();
-      for(int i = (page - 1) * limit; i >= 0 && !articles.isEmpty(); i--)
+      for(int i = (page - 1) * limit; i > 0 && !articles.isEmpty(); i--)
         articles.remove(0);
       
       JSONArray articleArr = new JSONArray();
@@ -72,9 +72,9 @@ public class ListArticlesEndpoint extends Endpoint {
       JSONObject response = new JSONObject()
           .put(Endpoint.STATUS_KEY, "ok")
           .put(Endpoint.INFO_KEY, "Retrieved articles.")
-          .put("articles", articles);
+          .put("articles", articleArr);
       if(!articles.isEmpty())
-        response.put("next", limit + 1);
+        response.put("next", page + 1);
       
       res.status(200);
       return response;
