@@ -1,16 +1,19 @@
 /*
- * Copyright (c) 2020 V2C Development Team. All rights reserved.
- * Licensed under the Version 0.0.1 of the V2C License (the "License").
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at <https://tinyurl.com/v2c-license>.
+ * Copyright (c) 2020 Axonibyte Innovations, LLC. All rights reserved.
  * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions 
- * limitations under the License.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
  */
-package edu.uco.cs.v2c.dashboard.backend.persistent;
+package com.axonibyte.stentor.persistent;
 
 import java.util.UUID;
 
@@ -23,12 +26,46 @@ import com.lambdaworks.crypto.SCryptUtil;
  */
 public class User {
   
-  private String PASSWORD_SALT = "0a486beb-d953-4620-95c7-c99689fb228b";
+  /**
+   * Database key associated with the username.
+   */
+  public static final String USERNAME_KEY = "username";
   
-  private UUID uid = null;
+  /**
+   * Database key associated with the email.
+   */
+  public static final String EMAIL_KEY = "email";
+  
+  /**
+   * Database key associated with the password hash.
+   */
+  public static final String PHASH_KEY = "phash";
+  
+  /**
+   * JSON key associated with a plaintext password.
+   */
+  public static final String PASSWORD_KEY = "password";
+  
+  /**
+   * Database key associated with the user's unique identifier.
+   */
+  public static final String ID_KEY = "id";
+  
+  private static String passwordSalt = "";
+  
+  private UUID id = null;
   private String email = null;
   private String username = null;
   private String pHash = null;
+  
+  /**
+   * Sets the password salt to be used when building or verifying passwords.
+   * 
+   * @param passwordSalt the password salt
+   */
+  public static void setPasswordSalt(String passwordSalt) {
+    User.passwordSalt = passwordSalt;
+  }
   
   /**
    * Retrieves the user's unique ID.
@@ -36,17 +73,17 @@ public class User {
    * @return the UUID associated with the user
    */
   public UUID getID() {
-    return uid;
+    return id;
   }
   
   /**
    * Sets the user's unique ID.
    * 
-   * @param uid the UUID associated with the user
+   * @param id the UUID associated with the user
    * @return this User
    */
-  public User setID(UUID uid) {
-    this.uid = uid;
+  public User setID(UUID id) {
+    this.id = id;
     return this;
   }
   
@@ -117,7 +154,7 @@ public class User {
    * @return this User
    */
   public User setPassword(String password) {
-    return setPasswordHash(SCryptUtil.scrypt(password + PASSWORD_SALT, 16, 16, 16));
+    return setPasswordHash(SCryptUtil.scrypt(password + passwordSalt, 16, 16, 16));
   }
   
   /**
@@ -128,7 +165,7 @@ public class User {
    */
   public boolean verifyPassword(String password) {
     try {
-      return SCryptUtil.check(password + PASSWORD_SALT, pHash);
+      return SCryptUtil.check(password + passwordSalt, pHash);
     } catch(IllegalArgumentException e) {
       e.printStackTrace();
       return false;

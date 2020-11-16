@@ -1,27 +1,28 @@
 /*
- * Copyright (c) 2019 Axonibyte Innovations, LLC. All rights reserved.
- *
+ * Copyright (c) 2020 Axonibyte Innovations, LLC. All rights reserved.
+ * 
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
- *
- *   https://www.apache.org/licenses/LICENSE-2.0
- *
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the license.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.log.Logger;
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthToken;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthTokenManager;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.log.Logger;
+import com.axonibyte.stentor.net.APIVersion;
+import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.net.auth.AuthTokenManager;
+
 import spark.Request;
 import spark.Response;
 
@@ -31,6 +32,9 @@ import spark.Response;
  * @author Caleb L. Power
  */
 public abstract class Endpoint {
+  
+  protected static final String STATUS_KEY = "status";
+  protected static final String INFO_KEY = "info";
   
   private HTTPMethod[] methods = null;
   private String route = null;
@@ -80,7 +84,7 @@ public abstract class Endpoint {
    */
   public static void authorize(AuthToken authToken, Request request, Response response) throws EndpointException {
     if(!authToken.hasClientPerms()) {
-      response.header("WWW-Authenticate", "V2C realm=dashboard");
+      response.header("WWW-Authenticate", "Stentor realm=blog");
       throw new EndpointException(request, "User is not logged in.", 401);
     }
   }
@@ -117,7 +121,7 @@ public abstract class Endpoint {
           request.requestMethod(),
           request.pathInfo()));
       
-      AuthToken authToken = V2CDashboardBackend.getAuthTokenManager().authorize(request);
+      AuthToken authToken = Stentor.getAuthTokenManager().authorize(request);
       if(authToken.getUser() != null) response.header(AuthTokenManager.OUTGOING_USER_HEADER, authToken.getUser().getID().toString());
       
       return doEndpointTask(request, response, authToken).toString(2) + '\n';

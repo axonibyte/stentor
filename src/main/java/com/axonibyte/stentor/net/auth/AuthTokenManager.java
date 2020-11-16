@@ -1,32 +1,19 @@
 /*
- * Copyright (c) 2020 V2C Development Team. All rights reserved.
- * Licensed under the Version 0.0.1 of the V2C License (the "License").
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at <https://tinyurl.com/v2c-license>.
+ * Copyright (c) 2020 Axonibyte Innovations, LLC. All rights reserved.
  * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions 
- * limitations under the License.
- * 
- * THIS FILE HAS BEEN MODIFIED. ORIGINAL WORK ADHERES TO THE FOLLOWING NOTICE.
- * 
- * Copyright (c) 2019 Axonibyte Innovations, LLC. All rights reserved.
- *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
- *
- *   https://www.apache.org/licenses/LICENSE-2.0
- *
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the license.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.auth;
+package com.axonibyte.stentor.net.auth;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -40,10 +27,10 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.log.Logger;
+import com.axonibyte.stentor.persistent.User;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.log.Logger;
-import edu.uco.cs.v2c.dashboard.backend.persistent.User;
 import spark.Request;
 
 /**
@@ -56,17 +43,17 @@ public class AuthTokenManager {
   /**
    * Denotes the header that will contain the session key if used properly.
    */
-  public static final String INCOMING_SESSION_HEADER = "X-V2C-Session";
+  public static final String INCOMING_SESSION_HEADER = "X-Stentor-Session";
   
   /**
    * Denotes the header in which the session key will be contained, if the user is authenticated.
    */
-  public static final String OUTGOING_SESSION_HEADER = "X-V2C-CSRF";
+  public static final String OUTGOING_SESSION_HEADER = "X-Stentor-CSRF";
   
   /**
    * Denotes the header in which the user's ID will be contained, if the user is authenticated.
    */
-  public static final String OUTGOING_USER_HEADER = "X-V2C-User";
+  public static final String OUTGOING_USER_HEADER = "X-Stentor-User";
   
   private Algorithm algorithm = null;
   private Map<String, AuthToken> sessionKeys = null;
@@ -96,14 +83,14 @@ public class AuthTokenManager {
     if(authorizationHeader != null) {
       String email = null;
       String password = null;
-      int idx = authorizationHeader.indexOf("V2C ") + 4;
+      int idx = authorizationHeader.indexOf("Stentor ") + 8;
       if(idx < authorizationHeader.length()) try {
         String authorizationData = new String(Base64.decode(authorizationHeader.substring(idx)));
         idx = authorizationData.indexOf(":", idx + 1);
         if(idx + 1 < authorizationData.length()) {
           email = authorizationData.substring(0, idx);
           password = authorizationData.substring(idx + 1);
-          User user = V2CDashboardBackend.getDatabase().getUserProfileByEmail(email);
+          User user = Stentor.getDatabase().getUserProfileByEmail(email);
           if(user != null && user.verifyPassword(password)) {
             token = new AuthToken().setUser(user);
             UUID uuid = null;
@@ -128,7 +115,7 @@ public class AuthTokenManager {
       if(sessionCookie != null) {
         try {
           JWTVerifier verifier = JWT.require(algorithm)
-              .withIssuer("V2C")
+              .withIssuer("Stentor")
               .build();
           DecodedJWT jwt = verifier.verify(sessionCookie);
           
@@ -170,7 +157,7 @@ public class AuthTokenManager {
    */
   public String generateCookie(AuthToken token) {
     return JWT.create()
-        .withIssuer("V2C")
+        .withIssuer("Stentor")
         .withClaim("sessionKey", token.getSessionKey())
         .sign(algorithm);
   }

@@ -1,26 +1,30 @@
 /*
- * Copyright (c) 2020 V2C Development Team. All rights reserved.
- * Licensed under the Version 0.0.1 of the V2C License (the "License").
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at <https://tinyurl.com/v2c-license>.
+ * Copyright (c) 2020 Axonibyte Innovations, LLC. All rights reserved.
  * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions 
- * limitations under the License.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
  */
-package edu.uco.cs.v2c.dashboard.backend.net.restful;
+package com.axonibyte.stentor.net.restful;
 
 import java.util.UUID;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import edu.uco.cs.v2c.dashboard.backend.V2CDashboardBackend;
-import edu.uco.cs.v2c.dashboard.backend.net.APIVersion;
-import edu.uco.cs.v2c.dashboard.backend.net.auth.AuthToken;
-import edu.uco.cs.v2c.dashboard.backend.persistent.User;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.net.APIVersion;
+import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.persistent.User;
+
 import spark.Request;
 import spark.Response;
 
@@ -42,23 +46,25 @@ public class CreateUserEndpoint extends Endpoint {
    * {@inheritDoc}
    */
   @Override public JSONObject doEndpointTask(Request req, Response res, AuthToken authToken) throws EndpointException {
+    authorize(authToken, req, res); // require user to be logged in
+    
     try {
       JSONObject request = new JSONObject(req.body());
-      String email = request.getString("email");
-      String username = request.getString("username");
-      String password = request.getString("password");
+      String email = request.getString(User.EMAIL_KEY);
+      String username = request.getString(User.USERNAME_KEY);
+      String password = request.getString(User.PASSWORD_KEY);
       
-      if(V2CDashboardBackend.getDatabase().getUserProfileByEmail(email) != null)
+      if(Stentor.getDatabase().getUserProfileByEmail(email) != null)
         throw new EndpointException(req, "Email already exists.", 409);
       
-      if(V2CDashboardBackend.getDatabase().getUserProfileByUsername(username) != null)
+      if(Stentor.getDatabase().getUserProfileByUsername(username) != null)
         throw new EndpointException(req, "Username already exists.", 409);
       
       UUID uuid = null;
       do uuid = UUID.randomUUID();
-      while(V2CDashboardBackend.getDatabase().getUserProfileByID(uuid) != null);
+      while(Stentor.getDatabase().getUserProfileByID(uuid) != null);
       
-      V2CDashboardBackend.getDatabase().setUserProfile(new User()
+      Stentor.getDatabase().setUserProfile(new User()
           .setEmail(email)
           .setUsername(username)
           .setPassword(password)
@@ -66,8 +72,8 @@ public class CreateUserEndpoint extends Endpoint {
       
       res.status(201);
       return new JSONObject()
-          .put("status", "ok")
-          .put("info", "User created.");
+          .put(Endpoint.STATUS_KEY, "ok")
+          .put(Endpoint.INFO_KEY, "User created.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);
