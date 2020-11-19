@@ -16,7 +16,6 @@
 package com.axonibyte.stentor.net.restful;
 
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,7 +36,6 @@ import spark.Response;
 public class ListArticlesEndpoint extends Endpoint {
   
   private static final String HTML_TAG_REGEX_STRING = "<[^>]+>";
-  private static final Pattern HTML_TAG_REGEX_PATTERN = Pattern.compile(HTML_TAG_REGEX_STRING);
   
   /**
    * Instantiates the endpoint.

@@ -43,7 +43,7 @@ import com.axonibyte.stentor.persistent.User;
  */
 public class Stentor {
   
-  private static final String LOG_LABEL = "DISPATCHER CORE";
+  private static final String LOG_LABEL = "STENTOR CORE";
   
   private static final int DEFAULT_PORT = 2586;
   private static final String DEFAULT_DATABASE = "127.0.0.1:27017";
