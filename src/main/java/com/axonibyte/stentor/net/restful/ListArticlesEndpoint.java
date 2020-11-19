@@ -16,6 +16,7 @@
 package com.axonibyte.stentor.net.restful;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,6 +36,9 @@ import spark.Response;
  */
 public class ListArticlesEndpoint extends Endpoint {
   
+  private static final String HTML_TAG_REGEX_STRING = "<[^>]+>";
+  private static final Pattern HTML_TAG_REGEX_PATTERN = Pattern.compile(HTML_TAG_REGEX_STRING);
+  
   /**
    * Instantiates the endpoint.
    */
@@ -49,6 +53,7 @@ public class ListArticlesEndpoint extends Endpoint {
     try {
       int page = Integer.parseInt(req.queryParamOrDefault("page", "1"));
       int limit = Integer.parseInt(req.queryParamOrDefault("limit", "10"));
+      int snippet = Integer.parseInt(req.queryParamOrDefault("snippet", "140"));
       
       if(page < 1 || limit < 1)
         throw new EndpointException(req, "Syntax error.", 400);
@@ -61,10 +66,19 @@ public class ListArticlesEndpoint extends Endpoint {
       
       for(int i = 0; i < limit && !articles.isEmpty(); i++) {
         Article article = articles.remove(0);
+        
+        String content = article.getContent().replaceAll(HTML_TAG_REGEX_STRING, " ").replaceAll("&#xA0; ", "");
+        if(snippet >= 0 && content.length() > snippet) {
+          int lastViableIdx = content.length();
+          for(int j = content.length() - 1; j >= 0 && j >= snippet; j--)
+            if(content.charAt(j) == ' ') lastViableIdx = j;
+          content = content.substring(0, lastViableIdx);
+        }
+        
         articleArr.put(new JSONObject()
             .put(Article.ID_KEY, article.getID().toString())
             .put(Article.TITLE_KEY, article.getTitle())
-            .put(Article.CONTENT_KEY, article.getContent())
+            .put(Article.CONTENT_KEY, content)
             .put(Article.AUTHOR_KEY, article.getAuthor().toString())
             .put(Article.TIMESTAMP_KEY, article.getTimestamp()));
       }
