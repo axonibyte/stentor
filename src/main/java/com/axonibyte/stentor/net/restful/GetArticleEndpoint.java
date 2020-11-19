@@ -23,6 +23,7 @@ import com.axonibyte.stentor.Stentor;
 import com.axonibyte.stentor.net.APIVersion;
 import com.axonibyte.stentor.net.auth.AuthToken;
 import com.axonibyte.stentor.persistent.Article;
+import com.axonibyte.stentor.persistent.User;
 
 import spark.Request;
 import spark.Response;
@@ -55,13 +56,19 @@ public class GetArticleEndpoint extends Endpoint {
     if(article == null)
       throw new EndpointException(req, "Article not found.", 404);
     
+    User user = Stentor.getDatabase().getUserProfileByID(article.getAuthor());
+    if(user == null)
+      throw new EndpointException(req, "Author not found.", 404);
+    
     return new JSONObject()
         .put(Endpoint.STATUS_KEY, "ok")
         .put(Endpoint.INFO_KEY, "Retrieved article.")
         .put(Article.ID_KEY, article.getID().toString())
         .put(Article.TITLE_KEY, article.getTitle())
         .put(Article.CONTENT_KEY, article.getContent())
-        .put(Article.AUTHOR_KEY, article.getAuthor().toString())
+        .put(Article.AUTHOR_KEY, new JSONObject()
+            .put(User.ID_KEY, user.getID().toString())
+            .put(User.USERNAME_KEY, user.getUsername()))
         .put(Article.TIMESTAMP_KEY, article.getTimestamp());
   }
   
