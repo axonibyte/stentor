@@ -1,0 +1,20 @@
+{
+  "database": {
+    "protocol": "mongodb+svc",
+    "host": "127.0.0.1",
+    "port": 27017,
+    "username": "myUser",
+    "password": "password123!",
+    "database": "db",
+    "secure": true
+  },
+  "auth": {
+    "salt": "predefined-password-salt"
+  },
+  "net": {
+    "psk": "predefined-preshared-key",
+    "port": 2586,
+    "truststore": "path/to/truststore",
+    "trustpass": "trustPass1!"
+  }
+}

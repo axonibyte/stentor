@@ -22,6 +22,10 @@ import java.util.UUID;
 import org.bson.Document;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoClientSettings.Builder;
+import com.mongodb.MongoCredential;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -36,19 +40,33 @@ import com.mongodb.client.model.Filters;
  */
 public class Database {
   
-  private static String DB_NAME = "stentor";
   private static String COLLECTION_ARTICLE = "article";
   private static String COLLECTION_USER = "user";
   
   private MongoClient mongoClient = null;
+  private String dbName = null;
   
   /**
    * Instantiates the database.
    * 
-   * @param connection the host and port of the MongoDB server
+   * @param proto the mongodb protocol (mongodb or mongodb+srv)
+   * @param host the server's address
+   * @param port mongo's binding port
+   * @param username the database user
+   * @param password the password for the database user
+   * @param sslEnabled true iff ssl/tls should be enabled
    */
-  public Database(String connection) {
-    this.mongoClient = MongoClients.create("mongodb://" + connection);
+  public Database(String proto, String host, int port, String username, String password, String database, boolean sslEnabled) {
+    this.dbName = database;
+    MongoCredential credential = username == null ? null : MongoCredential.createCredential(username, database, password.toCharArray());
+    Builder settings = MongoClientSettings.builder();
+    if(username != null && password != null) settings.credential(credential);
+    settings.applyToSslSettings(builder -> builder.enabled(sslEnabled))
+        .applyConnectionString(
+            new ConnectionString(
+                proto.contains("+srv") ? String.format("%1$s://%2$s", proto, host)
+                    : String.format("%1$s://%2$s:%3$d", proto, host, port)));
+    this.mongoClient = MongoClients.create(settings.build());
   }
   
   /**
@@ -58,7 +76,7 @@ public class Database {
    * @return the resulting author, or {@code null} if no such article exists
    */
   public Article getArticleByID(UUID id) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
     Document document = collection.find(Filters.eq(Article.ID_KEY, id.toString())).first();
     if(document != null) return new Article()
@@ -76,7 +94,7 @@ public class Database {
    * @return a list of articles in descending order by timestamp
    */
   public List<Article> getArticles() {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
     FindIterable<Document> documents = collection.find().sort(new BasicDBObject(Article.TIMESTAMP_KEY, -1));
     List<Article> articles = new LinkedList<>();
@@ -96,7 +114,7 @@ public class Database {
    * @param article the new article
    */
   public void setArticle(Article article) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
     String id = article.getID().toString();
     Document document = new Document(Article.ID_KEY, id)
@@ -115,7 +133,7 @@ public class Database {
    * @param article the article's unique identifier
    */
   public void deleteArticle(UUID article) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
     collection.deleteMany(Filters.eq(Article.ID_KEY, article.toString()));
   }
@@ -127,7 +145,7 @@ public class Database {
    * @return the resulting user, or {@code null} if no such user exists
    */
   public User getUserProfileByID(UUID id) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
     Document document = collection.find(Filters.eq(User.ID_KEY, id.toString())).first();
     if(document != null) return new User()
@@ -145,7 +163,7 @@ public class Database {
    * @return the resulting user, or <code>null</code> if no such user exists
    */
   public User getUserProfileByEmail(String email) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
     Document document = collection.find(Filters.eq(User.EMAIL_KEY, email)).first();
     if(document != null) return new User()
@@ -163,7 +181,7 @@ public class Database {
    * @return the resulting user, or <code>null</code> if no such user exists
    */
   public User getUserProfileByUsername(String username) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
     Document document = collection.find(Filters.eq(User.USERNAME_KEY, username)).first();
     if(document != null) return new User()
@@ -180,7 +198,7 @@ public class Database {
    * @param user the new user profile
    */
   public void setUserProfile(User user) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
     String id = user.getID().toString();
     Document document = new Document(User.ID_KEY, id)
@@ -198,7 +216,7 @@ public class Database {
    * @param user the unique identifier of the user profile
    */
   public void deleteUserProfile(UUID user) {
-    MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+    MongoDatabase database = mongoClient.getDatabase(dbName);
     MongoCollection<Document> collection = database.getCollection(COLLECTION_USER);
     collection.deleteMany(Filters.eq(User.ID_KEY, user.toString()));
   }

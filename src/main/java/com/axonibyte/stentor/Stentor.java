@@ -18,15 +18,20 @@ package com.axonibyte.stentor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.json.JSONObject;
 
@@ -45,25 +50,25 @@ public class Stentor {
   
   private static final String LOG_LABEL = "STENTOR CORE";
   
-  private static final int DEFAULT_PORT = 2586;
-  private static final String DEFAULT_DATABASE = "127.0.0.1:27017";
+  private static final int DEFAULT_NETPORT = 2586;
+  private static final int DEFAULT_DBPORT = 27017;
+  private static final String DEFAULT_DBHOST = "127.0.0.1";
+  private static final String DEFAULT_DBPROTO = "mongodb";
+  private static final String DEFAULT_DBNAME = "stentor";
   private static final String DEFAULT_PASSWORD_SALT = "0a486beb-d953-4620-95c7-c99689fb228b";
   private static final String DEFAULT_PSK = "484dd6d1-9262-4975-a707-4238e08ed266";
   private static final String CONFIG_PARAM_LONG = "config-file";
   private static final String CONFIG_PARAM_SHORT = "c";
-  private static final String DB_PARAM_LONG = "database";
-  private static final String DB_PARAM_SHORT = "d";
-  private static final String PORT_PARAM_LONG = "port";
-  private static final String PORT_PARAM_SHORT = "p";
-  private static final String PASSWORD_SALT_PARAM_LONG = "password-salt";
-  private static final String PASSWORD_SALT_PARAM_SHORT = "s";
-  private static final String PSK_PARAM_LONG = "preshared-key";
-  private static final String PSK_PARAM_SHORT = "k";
-  private static final String ADD_ADMIN_PARAM_LONG = "add-admin";
-  private static final String ADD_ADMIN_PARAM_SHORT = "a";
-  private static final String RESET_PASSWORD_PARAM_LONG = "reset-password";
-  private static final String RESET_PASSWORD_PARAM_SHORT = "r";
+  private static final String ADD_ADMIN_SWITCH_LONG = "add-admin";
+  private static final String ADD_ADMIN_SWITCH_SHORT = "a";
+  private static final String RESET_PASSWORD_SWITCH_LONG = "reset-password";
+  private static final String RESET_PASSWORD_SWITCH_SHORT = "r";
+  private static final String PRINT_HELP_SWITCH_LONG = "help";
+  private static final String PRINT_HELP_SWITCH_SHORT = "h";
+  private static final String DEBUG_LOG_SWITCH_LONG = "debug";
+  private static final String DEBUG_LOG_SWITCH_SHORT = "d";
 
+  private static boolean debugEnabled = false; // true iff debug logging is enabled
   private static APIDriver aPIDriver = null; // the front end
   private static AuthTokenManager authTokenManager = null; // the auth token manager
   private static Database database = null; // the database
@@ -76,55 +81,87 @@ public class Stentor {
   public static void main(String[] args) {
     try {
       Options options = new Options();
-      options.addOption(ADD_ADMIN_PARAM_SHORT, ADD_ADMIN_PARAM_LONG, false,
+      options.addOption(ADD_ADMIN_SWITCH_SHORT, ADD_ADMIN_SWITCH_LONG, false,
           "Adds an administrator and exits.");
-      options.addOption(RESET_PASSWORD_PARAM_SHORT, RESET_PASSWORD_PARAM_LONG, false,
+      options.addOption(RESET_PASSWORD_SWITCH_SHORT, RESET_PASSWORD_SWITCH_LONG, false,
           "Resets a user's password.");
       options.addOption(CONFIG_PARAM_SHORT, CONFIG_PARAM_LONG, true,
           "Specifies the location of the configuration file. Default = NULL");
-      options.addOption(DB_PARAM_SHORT, DB_PARAM_LONG, true,
-          "Specifies the target database server. Default = " + DEFAULT_DATABASE);
-      options.addOption(PORT_PARAM_SHORT, PORT_PARAM_LONG, true,
-          "Specifies the server's listening port. Default = " + DEFAULT_PORT);
-      options.addOption(PSK_PARAM_SHORT, PSK_PARAM_LONG, true,
-          "Specifies the preshared key for authentication. Default = " + DEFAULT_PSK);
-      options.addOption(PASSWORD_SALT_PARAM_SHORT, PASSWORD_SALT_PARAM_LONG, true,
-          "Specified the salt used to build user password hashes. Default = " + DEFAULT_PASSWORD_SALT);
+      options.addOption(PRINT_HELP_SWITCH_SHORT, PRINT_HELP_SWITCH_LONG, false,
+          "Prints a useful help message.");
+      options.addOption(DEBUG_LOG_SWITCH_SHORT, DEBUG_LOG_SWITCH_LONG, false,
+          "Enables debug logging.");
       CommandLineParser parser = new DefaultParser();
       CommandLine cmd = parser.parse(options, args);
       
-      JSONObject config = null;
-      if(cmd.hasOption(CONFIG_PARAM_LONG))
-        config = new JSONObject(readResource(cmd.getOptionValue(CONFIG_PARAM_LONG)));
+      debugEnabled = cmd.hasOption(DEBUG_LOG_SWITCH_LONG);
       
-      final int port = cmd.hasOption(PORT_PARAM_LONG)
-          ? Integer.parseInt(cmd.getOptionValue(PORT_PARAM_LONG))
-              : (config != null && config.has(PORT_PARAM_LONG)
-                  ? config.getInt(PORT_PARAM_LONG)
-                      : DEFAULT_PORT);
-          
-      final String dbConnection = cmd.hasOption(DB_PARAM_LONG)
-          ? cmd.getOptionValue(DB_PARAM_LONG)
-              : (config != null && config.has(DB_PARAM_LONG)
-                  ? config.getString(DB_PARAM_LONG)
-                      : DEFAULT_DATABASE);
-            
-      final String psk = cmd.hasOption(PSK_PARAM_LONG)
-          ? cmd.getOptionValue(PSK_PARAM_LONG)
-              : (config != null && config.has(PSK_PARAM_LONG)
-                  ? config.getString(PSK_PARAM_LONG)
-                      : DEFAULT_PSK);
-          
-      User.setPasswordSalt(cmd.hasOption(PASSWORD_SALT_PARAM_LONG)
-          ? cmd.getOptionValue(PASSWORD_SALT_PARAM_LONG)
-              : (config != null && config.has(PASSWORD_SALT_PARAM_LONG)
-                  ? config.getString(PASSWORD_SALT_PARAM_LONG)
-                      : DEFAULT_PASSWORD_SALT));
+      if(cmd.hasOption(PRINT_HELP_SWITCH_LONG)) {
+        final HelpFormatter formatter = new HelpFormatter();
+        try(PrintWriter out = new PrintWriter(System.out)) {
+          formatter.printHelp(out, 80, "stentor [ options... ]", "options:", options, 2, 4, "Copyright (c) 2021 Axonibyte Innovations, LLC");
+          out.flush();
+        }
+        System.exit(0);
+      }
+      
+      JSONObject config = null;
+      if(cmd.hasOption(CONFIG_PARAM_LONG)) {
+        String resource = readResource(cmd.getOptionValue(CONFIG_PARAM_LONG));
+        if(resource == null) {
+          try(InputStream in = Stentor.class.getResourceAsStream("/default-config.json");
+              OutputStream out = new FileOutputStream(new File(cmd.getOptionValue(CONFIG_PARAM_LONG)))) {
+            byte[] buf = new byte[4096];
+            for(;;) {
+              int len = in.read(buf);
+              if(len == -1) break;
+              out.write(buf, 0, len);
+            }
+          }
+          throw new Exception("New config generated. Please configure it and try again.");
+        } else {
+          config = new JSONObject(resource);
+        }
+      }
+      
+      final JSONObject dbCfg = config != null ? config.optJSONObject("database") : null;
+      final boolean dbSecure = dbCfg != null ? dbCfg.optBoolean("secure") : false;
+      final int dbPort = dbCfg != null ? dbCfg.optInt("port") : 0;
+      final String dbProto = dbCfg != null ? dbCfg.optString("protocol") : null;
+      final String dbHost = dbCfg != null ? dbCfg.optString("host") : null;
+      final String dbUser = dbCfg != null ? dbCfg.optString("username") : null;
+      final String dbPass = dbCfg != null ? dbCfg.optString("password") : null;
+      final String dbName = dbCfg != null ? dbCfg.getString("database") : null;
+      
+      final JSONObject authCfg = config != null ? config.optJSONObject("auth") : null;
+      User.setPasswordSalt(authCfg != null && authCfg.has("salt") ? authCfg.getString("salt") : DEFAULT_PASSWORD_SALT);
+      
+      final JSONObject netCfg = config != null ? config.optJSONObject("net") : null;
+      final int netPort = netCfg != null && netCfg.has("port") ? netCfg.getInt("port") : DEFAULT_NETPORT;
+      final String netPSK = netCfg != null && netCfg.has("psk") ? netCfg.getString("psk") : DEFAULT_PSK;
+      final String trustStore = netCfg != null && netCfg.has("truststore") ? netCfg.getString("truststore") : null;
+      final String trustPass = netCfg != null && netCfg.has("trustpass")
+          ? (netCfg.has("truststore") ? netCfg.getString("trustpass") : "") : null;
+      
+      if(trustStore != null) {
+        Properties properties = System.getProperties();
+        properties.setProperty("javax.net.ssl.trustStore", trustStore);
+        properties.setProperty("javax.net.ssl.trustStorePassword", trustPass);
+        System.setProperties(properties);
+      }
 
       Logger.onInfo(LOG_LABEL, "Connecting to database...");
-      database = new Database(dbConnection);
       
-      if(cmd.hasOption(ADD_ADMIN_PARAM_LONG)) {
+      database = new Database(
+          dbProto != null ? dbProto : DEFAULT_DBPROTO,
+          dbHost != null ? dbHost : DEFAULT_DBHOST,
+          dbPort > 0 ? dbPort : DEFAULT_DBPORT,
+          dbUser == null || dbPass == null ? null : dbUser,
+          dbUser == null || dbPass == null ? null : dbPass,
+          dbName != null ? dbName : DEFAULT_DBNAME,
+          dbSecure);
+      
+      if(cmd.hasOption(ADD_ADMIN_SWITCH_LONG)) {
         User user = new User();
         
         for(;;) {
@@ -156,7 +193,7 @@ public class Stentor {
         database.setUserProfile(user);
         System.out.println("User created.");
         
-      } else if(cmd.hasOption(RESET_PASSWORD_PARAM_LONG)) {
+      } else if(cmd.hasOption(RESET_PASSWORD_SWITCH_LONG)) {
         String username = new String(System.console().readLine("Enter username: "));
         User user = database.getUserProfileByUsername(username);
         if(user == null)
@@ -169,8 +206,8 @@ public class Stentor {
         }
       } else {
         Logger.onInfo(LOG_LABEL, "Spinning up API driver...");
-        aPIDriver = APIDriver.build(port, "*"); // configure the front end
-        authTokenManager = new AuthTokenManager(psk);
+        aPIDriver = APIDriver.build(netPort, "*"); // configure the front end
+        authTokenManager = new AuthTokenManager(netPSK);
     
         // catch CTRL + C
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -183,6 +220,7 @@ public class Stentor {
       }
     } catch(Exception e) {
       Logger.onError(LOG_LABEL, "Some exception was thrown during launch: " + e.getMessage());
+      if(debugEnabled) e.printStackTrace();
     }
   }
   
@@ -212,7 +250,9 @@ public class Stentor {
       for(String line; (line = reader.readLine()) != null;)
         stringBuilder.append(line.trim());
       return stringBuilder.toString();
-    } catch(IOException e) { }
+    } catch(IOException e) {
+      if(debugEnabled) e.printStackTrace();
+    }
     return null;
   }
   
