@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the license.
  */
-package com.axonibyte.stentor.net.restful;
+package com.axonibyte.stentor.net.restful.user;
 
 import java.util.UUID;
 
@@ -22,6 +22,9 @@ import org.json.JSONObject;
 import com.axonibyte.stentor.Stentor;
 import com.axonibyte.stentor.net.APIVersion;
 import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.net.restful.Endpoint;
+import com.axonibyte.stentor.net.restful.EndpointException;
+import com.axonibyte.stentor.net.restful.HTTPMethod;
 
 import spark.Request;
 import spark.Response;

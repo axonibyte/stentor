@@ -1,0 +1,21 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="apiEndpointTestSuite" verbose="10" object-factory="org.powermock.modules.testng.PowerMockObjectFactory">
+  <test name="articleEndpointTest">
+    <classes>
+      <class name="com.axonibyte.stentor.net.restful.article.CreateArticleEndpointTest" />
+      <class name="com.axonibyte.stentor.net.restful.article.DeleteArticleEndpointTest" />
+      <class name="com.axonibyte.stentor.net.restful.article.GetArticleEndpointTest" />
+      <class name="com.axonibyte.stentor.net.restful.article.ListArticlesEndpointTest" />
+      <class name="com.axonibyte.stentor.net.restful.article.ModifyArticleEndpointTest" />
+    </classes>
+  </test>
+  <test name="userEndpointTest">
+    <classes>
+      <class name="com.axonibyte.stentor.net.restful.user.CreateUserEndpointTest" />
+      <class name="com.axonibyte.stentor.net.restful.user.DeleteUserEndpointTest" />
+      <class name="com.axonibyte.stentor.net.restful.user.ModifyUserEndpointTest" />
+    </classes>
+  </test>
+</suite>

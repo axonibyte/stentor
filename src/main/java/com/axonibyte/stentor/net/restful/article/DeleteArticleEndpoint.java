@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the license.
  */
-package com.axonibyte.stentor.net.restful;
+package com.axonibyte.stentor.net.restful.article;
 
 import java.util.UUID;
 
@@ -22,54 +22,48 @@ import org.json.JSONObject;
 import com.axonibyte.stentor.Stentor;
 import com.axonibyte.stentor.net.APIVersion;
 import com.axonibyte.stentor.net.auth.AuthToken;
-import com.axonibyte.stentor.persistent.Article;
-import com.axonibyte.stentor.persistent.User;
+import com.axonibyte.stentor.net.restful.Endpoint;
+import com.axonibyte.stentor.net.restful.EndpointException;
+import com.axonibyte.stentor.net.restful.HTTPMethod;
 
 import spark.Request;
 import spark.Response;
 
 /**
- * Handles article retrieval.
+ * Endpoint to handle article deletion.
  * 
  * @author Caleb L. Power
  */
-public class GetArticleEndpoint extends Endpoint {
+public class DeleteArticleEndpoint extends Endpoint {
   
   /**
    * Instantiates the endpoint.
    */
-  public GetArticleEndpoint() {
-    super("/articles/:article", APIVersion.VERSION_1, HTTPMethod.GET);
+  public DeleteArticleEndpoint() {
+    super("/articles/:article", APIVersion.VERSION_1, HTTPMethod.DELETE);
   }
   
   /**
    * {@inheritDoc}
    */
   @Override public JSONObject doEndpointTask(Request req, Response res, AuthToken authToken) throws EndpointException {
-    Article article = null;
+    authorize(authToken, req, res); // require user to be logged in
+    
+    UUID id = null;
     
     try {
-      UUID id = UUID.fromString(req.params("article"));
-      if(id != null) article = Stentor.getDatabase().getArticleByID(id);
+      id = UUID.fromString(req.params("article"));
     } catch(IllegalArgumentException e) { }
     
-    if(article == null)
+    if(id == null || Stentor.getDatabase().getArticleByID(id) == null)
       throw new EndpointException(req, "Article not found.", 404);
     
-    User user = Stentor.getDatabase().getUserProfileByID(article.getAuthor());
-    if(user == null)
-      throw new EndpointException(req, "Author not found.", 404);
+    Stentor.getDatabase().deleteArticle(id);
     
+    res.status(202);
     return new JSONObject()
         .put(Endpoint.STATUS_KEY, "ok")
-        .put(Endpoint.INFO_KEY, "Retrieved article.")
-        .put(Article.ID_KEY, article.getID().toString())
-        .put(Article.TITLE_KEY, article.getTitle())
-        .put(Article.CONTENT_KEY, article.getContent())
-        .put(Article.AUTHOR_KEY, new JSONObject()
-            .put(User.ID_KEY, user.getID().toString())
-            .put(User.USERNAME_KEY, user.getUsername()))
-        .put(Article.TIMESTAMP_KEY, article.getTimestamp());
+        .put(Endpoint.INFO_KEY, "Article deleted.");
   }
   
 }

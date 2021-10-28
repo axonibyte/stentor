@@ -1,0 +1,11 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="modelTestSuite" verbose="10">
+  <test name="modelTest">
+    <classes>
+      <class name="com.axonibyte.stentor.persistent.ArticleTest" />
+      <class name="com.axonibyte.stentor.persistent.UserTest" />
+    </classes>
+  </test>
+</suite>

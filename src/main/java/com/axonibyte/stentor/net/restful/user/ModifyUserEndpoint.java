@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the license.
  */
-package com.axonibyte.stentor.net.restful;
+package com.axonibyte.stentor.net.restful.user;
 
 import java.util.UUID;
 
@@ -23,23 +23,26 @@ import org.json.JSONObject;
 import com.axonibyte.stentor.Stentor;
 import com.axonibyte.stentor.net.APIVersion;
 import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.net.restful.Endpoint;
+import com.axonibyte.stentor.net.restful.EndpointException;
+import com.axonibyte.stentor.net.restful.HTTPMethod;
 import com.axonibyte.stentor.persistent.User;
 
 import spark.Request;
 import spark.Response;
 
 /**
- * Endpoint to handle user creation.
+ * Endpoint to handle user modifications.
  * 
  * @author Caleb L. Power
  */
-public class CreateUserEndpoint extends Endpoint {
+public class ModifyUserEndpoint extends Endpoint {
   
   /**
    * Instantiates the endpoint.
    */
-  public CreateUserEndpoint() {
-    super("/users", APIVersion.VERSION_1, HTTPMethod.POST);
+  public ModifyUserEndpoint() {
+    super("/users/:user", APIVersion.VERSION_1, HTTPMethod.PATCH);
   }
   
   /**
@@ -49,31 +52,41 @@ public class CreateUserEndpoint extends Endpoint {
     authorize(authToken, req, res); // require user to be logged in
     
     try {
-      JSONObject request = new JSONObject(req.body());
-      String email = request.getString(User.EMAIL_KEY);
-      String username = request.getString(User.USERNAME_KEY);
-      String password = request.getString(User.PASSWORD_KEY);
+      UUID id = null;
       
-      if(Stentor.getDatabase().getUserProfileByEmail(email) != null)
+      try {
+        id = UUID.fromString(req.params("user"));
+      } catch(IllegalArgumentException e) { }
+      
+      User user = null;
+      user = id == null ? null : Stentor.getDatabase().getUserProfileByID(id);
+      if(user == null) throw new EndpointException(req, "User not found.", 404);
+      
+      if(!authToken.getUser().getID().equals(id))
+        throw new EndpointException(req, "Access denied.", 403);
+      
+      JSONObject request = new JSONObject(req.body());
+      String email = request.has(User.EMAIL_KEY) ? request.getString(User.EMAIL_KEY) : user.getEmail();
+      String username = request.has(User.USERNAME_KEY) ? request.getString(User.USERNAME_KEY) : user.getUsername();
+      String password = request.has(User.PASSWORD_KEY) ? request.getString(User.PASSWORD_KEY) : null;
+      
+      if(!email.equalsIgnoreCase(user.getEmail())
+          && Stentor.getDatabase().getUserProfileByEmail(email) != null)
         throw new EndpointException(req, "Email already exists.", 409);
       
-      if(Stentor.getDatabase().getUserProfileByUsername(username) != null)
+      if(!username.equalsIgnoreCase(user.getUsername())
+          && Stentor.getDatabase().getUserProfileByUsername(username) != null)
         throw new EndpointException(req, "Username already exists.", 409);
       
-      UUID uuid = null;
-      do uuid = UUID.randomUUID();
-      while(Stentor.getDatabase().getUserProfileByID(uuid) != null);
+      if(password != null) user.setPassword(password);
+      user.setEmail(email).setUsername(username);
       
-      Stentor.getDatabase().setUserProfile(new User()
-          .setEmail(email)
-          .setUsername(username)
-          .setPassword(password)
-          .setID(uuid));
+      Stentor.getDatabase().setUserProfile(user);
       
-      res.status(201);
+      res.status(202);
       return new JSONObject()
           .put(Endpoint.STATUS_KEY, "ok")
-          .put(Endpoint.INFO_KEY, "User created.");
+          .put(Endpoint.INFO_KEY, "User updated.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);
