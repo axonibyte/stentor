@@ -33,8 +33,8 @@ import spark.Response;
  */
 public abstract class Endpoint {
   
-  protected static final String STATUS_KEY = "status";
-  protected static final String INFO_KEY = "info";
+  public static final String STATUS_KEY = "status";
+  public static final String INFO_KEY = "info";
   
   private HTTPMethod[] methods = null;
   private String route = null;

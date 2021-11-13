@@ -60,8 +60,6 @@ public class GetArticleEndpoint extends Endpoint {
       throw new EndpointException(req, "Article not found.", 404);
     
     User user = Stentor.getDatabase().getUserProfileByID(article.getAuthor());
-    if(user == null)
-      throw new EndpointException(req, "Author not found.", 404);
     
     return new JSONObject()
         .put(Endpoint.STATUS_KEY, "ok")
@@ -69,9 +67,10 @@ public class GetArticleEndpoint extends Endpoint {
         .put(Article.ID_KEY, article.getID().toString())
         .put(Article.TITLE_KEY, article.getTitle())
         .put(Article.CONTENT_KEY, article.getContent())
-        .put(Article.AUTHOR_KEY, new JSONObject()
-            .put(User.ID_KEY, user.getID().toString())
-            .put(User.USERNAME_KEY, user.getUsername()))
+        .put(Article.AUTHOR_KEY, user == null ? JSONObject.NULL
+            : new JSONObject()
+                .put(User.ID_KEY, user.getID().toString())
+                .put(User.USERNAME_KEY, user.getUsername()))
         .put(Article.TIMESTAMP_KEY, article.getTimestamp());
   }
   
