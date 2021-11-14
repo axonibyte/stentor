@@ -15,6 +15,7 @@ import org.testng.IObjectFactory;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 
+import com.axonibyte.stentor.EmptyAnswer;
 import com.axonibyte.stentor.Stentor;
 import com.axonibyte.stentor.net.auth.AuthToken;
 import com.axonibyte.stentor.net.restful.Endpoint;
@@ -127,11 +128,7 @@ import spark.routematch.RouteMatch;
     final Database database = EasyMock.createMock(Database.class);
     EasyMock.expect(database.getArticleByID(articleID)).andReturn(article).once();
     EasyMock.expect(database.getUserProfileByID(userID)).andReturn(null).once();
-    EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
-      @Override public Object answer() throws Throwable {
-        return null;
-      }
-    }).once();
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -149,11 +146,7 @@ import spark.routematch.RouteMatch;
     
     final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
     servletRes.setStatus(200);
-    EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
-      @Override public Object answer() throws Throwable {
-        return null;
-      }
-    }).once();
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
     EasyMock.replay(servletRes);
     Response res = RequestResponseFactory.create(servletRes);
     
@@ -196,11 +189,7 @@ import spark.routematch.RouteMatch;
     final Database database = EasyMock.createMock(Database.class);
     EasyMock.expect(database.getArticleByID(articleID)).andReturn(article).once();
     EasyMock.expect(database.getUserProfileByID(userID)).andReturn(user).once();
-    EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
-      @Override public Object answer() throws Throwable {
-        return null;
-      }
-    }).once();
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -218,11 +207,7 @@ import spark.routematch.RouteMatch;
     
     final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
     servletRes.setStatus(200);
-    EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
-      @Override public Object answer() throws Throwable {
-        return null;
-      }
-    }).once();
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
     EasyMock.replay(servletRes);
     Response res = RequestResponseFactory.create(servletRes);
     
