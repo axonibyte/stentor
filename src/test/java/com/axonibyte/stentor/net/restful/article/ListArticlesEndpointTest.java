@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.powermock.api.easymock.PowerMock;
@@ -41,11 +40,12 @@ import spark.routematch.RouteMatch;
   
   private final Endpoint endpoint = new ListArticlesEndpoint();
   private final List<Article> articles = new ArrayList<>();
-  private final String shortContent = "This is short content for an article.";
-  private final String longContent = "This is content for an article. These are the words "
-      + "that I need to add so that the length of the test string surpasses the default "
-      + "snippet truncation";
-  private final String longContentAddendum = " length. Bah weep granah weep nini bon!";
+  private final String[] content = {
+      "This is content for an article.", // 31 characters
+      " These are the words that I need so that the length of the test", // 63 characters, sum = 94
+      " string surpasses the default snippet truncation", // 48 characters, sum = 142
+      " length. Bah weep granah weep nini bon!" // 39 characters, sum = 181
+  };
   
   @ObjectFactory public IObjectFactory getObjectFactory() {
     return new org.powermock.modules.testng.PowerMockObjectFactory();
@@ -57,7 +57,7 @@ import spark.routematch.RouteMatch;
       UUID authorID = UUID.randomUUID();
       UUID articleID = UUID.randomUUID();
       String articleTitle = String.format("Article #%1$d", i);
-      String articleContent = i % 2 == 0 ? shortContent : (longContent + longContentAddendum);
+      String articleContent = content[0] + (i % 2 == 1 ? content[1] + content[2] + content[3] : "");
       long articleTimestamp = timestamp++;
       Article article = new Article()
           .setID(articleID)
@@ -184,7 +184,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(BAD_LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
-    EasyMock.replay(servletReq);;
+    EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
     final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
@@ -243,7 +243,7 @@ import spark.routematch.RouteMatch;
       JSONObject articleObj = (JSONObject)articleArr.get(i);
       Assert.assertEquals(articleObj.getString(Article.ID_KEY), corresponding.getID().toString());
       Assert.assertEquals(articleObj.getString(Article.TITLE_KEY), corresponding.getTitle());
-      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), i % 2 == 0 ? longContent : shortContent);
+      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), content[0] + (i % 2 == 0 ? content[1] + content[2] : ""));
       Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
       Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
     }
@@ -291,7 +291,7 @@ import spark.routematch.RouteMatch;
       JSONObject articleObj = (JSONObject)articleArr.get(i);
       Assert.assertEquals(articleObj.getString(Article.ID_KEY), corresponding.getID().toString());;
       Assert.assertEquals(articleObj.getString(Article.TITLE_KEY), corresponding.getTitle());
-      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), i % 2 == 0 ? longContent : shortContent);
+      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), content[0] + (i % 2 == 0 ? content[1] + content[2] : ""));
       Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
       Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
     }
@@ -378,7 +378,7 @@ import spark.routematch.RouteMatch;
       JSONObject articleObj = (JSONObject)articleArr.get(i);
       Assert.assertEquals(articleObj.getString(Article.ID_KEY), corresponding.getID().toString());
       Assert.assertEquals(articleObj.getString(Article.TITLE_KEY), corresponding.getTitle());
-      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), i % 2 == 0 ? longContent : shortContent);
+      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), content[0] + (i % 2 == 0 ? content[1] + content[2] : ""));
       Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
       Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
     }
@@ -426,14 +426,13 @@ import spark.routematch.RouteMatch;
       JSONObject articleObj = (JSONObject)articleArr.get(i);
       Assert.assertEquals(articleObj.getString(Article.ID_KEY), corresponding.getID().toString());
       Assert.assertEquals(articleObj.getString(Article.TITLE_KEY), corresponding.getTitle());
-      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), i % 2 == 0 ? longContent : shortContent);
+      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), content[0] + (i % 2 == 0 ? content[1] + content[2] : ""));
       Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
       Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
     }
     Assert.assertFalse(resBody.has("next"));
   }
   
-  // TODO test success with page and small limit
   @Test public void testDoEndpointTask_pageAndLimitSpecified() throws EndpointException {
     final String PAGE_ARG = "3";
     final String LIMIT_ARG = "4";
@@ -476,21 +475,107 @@ import spark.routematch.RouteMatch;
       JSONObject articleObj = (JSONObject)articleArr.get(i);
       Assert.assertEquals(articleObj.getString(Article.ID_KEY), corresponding.getID().toString());
       Assert.assertEquals(articleObj.getString(Article.TITLE_KEY), corresponding.getTitle());
-      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), i % 2 == 0 ? longContent : shortContent);
+      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), content[0] + (i % 2 == 0 ? content[1] + content[2] : ""));
       Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
       Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
     }
     Assert.assertEquals(resBody.getInt("next"), 4);
   }
   
-  // TODO test success with small snippet
-  @Test public void testDoEndpointTask_smallSnippetSpecified() {
+  @Test public void testDoEndpointTask_smallSnippetSpecified() throws EndpointException {
+    final String LIMIT_ARG = "92";
     
+    final Database database = EasyMock.createMock(Database.class);
+    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(0, 10)).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).once();
+    PowerMock.replay(Stentor.class);
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
+    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
+    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
+    EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("snippet")).andReturn(LIMIT_ARG).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    servletRes.setStatus(200);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
+    Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
+    Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Retrieved articles.");
+    JSONArray articleArr = resBody.getJSONArray("articles");
+    Assert.assertEquals(articleArr.length(), 10);
+    for(int i = 0; i < articleArr.length(); i++) {
+      Article corresponding = articles.get(i);
+      JSONObject articleObj = (JSONObject)articleArr.get(i);
+      Assert.assertEquals(articleObj.getString(Article.ID_KEY), corresponding.getID().toString());
+      Assert.assertEquals(articleObj.getString(Article.TITLE_KEY), corresponding.getTitle());
+      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), content[0] + (i % 2 == 0 ? content[1] : ""));
+      Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
+      Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
+    }
+    Assert.assertEquals(resBody.getInt("next"), 2);
   }
   
-  // TODO test success with large snippet
-  @Test public void testDoEndpointTask_largeSnippetSpecified() {
+  @Test public void testDoEndpointTask_largeSnippetSpecified() throws EndpointException {
+    final String LIMIT_ARG = "280";
     
+    final Database database = EasyMock.createMock(Database.class);
+    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(0, 10)).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).once();
+    PowerMock.replay(Stentor.class);
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
+    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
+    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
+    EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("snippet")).andReturn(LIMIT_ARG).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    servletRes.setStatus(200);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
+    Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
+    Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Retrieved articles.");
+    JSONArray articleArr = resBody.getJSONArray("articles");
+    Assert.assertEquals(articleArr.length(), 10);
+    for(int i = 0; i < articleArr.length(); i++) {
+      Article corresponding = articles.get(i);
+      JSONObject articleObj = (JSONObject)articleArr.get(i);
+      Assert.assertEquals(articleObj.getString(Article.ID_KEY), corresponding.getID().toString());
+      Assert.assertEquals(articleObj.getString(Article.TITLE_KEY), corresponding.getTitle());
+      Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), content[0] + (i % 2 == 0 ? content[1] + content[2] + content[3] : ""));
+      Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
+      Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
+    }
+    Assert.assertEquals(resBody.getInt("next"), 2);
   }
   
 }
