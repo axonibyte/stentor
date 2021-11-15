@@ -33,7 +33,7 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
-@PrepareForTest({ Stentor.class }) public class ListArticlesEndpointTest {
+@PrepareForTest({ Stentor.class }) public final class ListArticlesEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
   private static final String METHOD = "GET";
@@ -88,7 +88,9 @@ import spark.routematch.RouteMatch;
     return mockups;
   }
   
-  private void validateSuccessResponse(Request req, int arrLen, int arrOffset, int maxContent, int next) throws EndpointException, JSONException {
+  private void validateSuccessResponse(Database database, HttpServletRequest servletReq, List<Article> generatedArticles, int arrLen, int arrOffset, int maxContent, int next) throws EndpointException, JSONException {
+    final Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
+    
     final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
     servletRes.setStatus(200);
     EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
@@ -96,7 +98,6 @@ import spark.routematch.RouteMatch;
     Response res = RequestResponseFactory.create(servletRes);
     
     final AuthToken authToken = EasyMock.createMock(AuthToken.class);
-    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
     EasyMock.replay(authToken);
     
     StringBuilder longContentBuilder = new StringBuilder(content[0]);
@@ -123,6 +124,10 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(resBody.getInt("next"), next);
     else
       Assert.assertFalse(resBody.has("next"));
+    
+    generatedArticles.forEach(a -> EasyMock.verify(a));
+    EasyMock.verify(database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
   @Test public void testDoEndpointTask_pageInvalid() {
@@ -141,7 +146,6 @@ import spark.routematch.RouteMatch;
     Response res = RequestResponseFactory.create(servletRes);
     
     final AuthToken authToken = EasyMock.createMock(AuthToken.class);
-    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
     EasyMock.replay(authToken);
     
     try {
@@ -151,6 +155,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertEquals(e.toString(), "Syntax error.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_pageBadRange() {
@@ -171,7 +177,6 @@ import spark.routematch.RouteMatch;
     Response res = RequestResponseFactory.create(servletRes);
     
     final AuthToken authToken = EasyMock.createMock(AuthToken.class);
-    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
     EasyMock.replay(authToken);
     
     try {
@@ -181,6 +186,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertEquals(e.toString(), "Syntax error.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_limitInvalid() {
@@ -200,7 +207,6 @@ import spark.routematch.RouteMatch;
     Response res = RequestResponseFactory.create(servletRes);
     
     final AuthToken authToken = EasyMock.createMock(AuthToken.class);
-    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
     EasyMock.replay(authToken);
     
     try {
@@ -210,6 +216,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertEquals(e.toString(), "Syntax error.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_limitBadRange() {
@@ -230,7 +238,6 @@ import spark.routematch.RouteMatch;
     Response res = RequestResponseFactory.create(servletRes);
     
     final AuthToken authToken = EasyMock.createMock(AuthToken.class);
-    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
     EasyMock.replay(authToken);
     
     try {
@@ -240,11 +247,14 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertEquals(e.toString(), "Syntax error.");
     }
+    
+    EasyMock.verify(servletRes, servletReq, authToken);
   }
   
   @Test public void testDoEndpointTask_successDefault() throws EndpointException {
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(0, 10)).once();
+    final var articles = generateArticleMockups(0, 10);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -252,23 +262,20 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 10, 0, 2, 2);
+    validateSuccessResponse(database, servletReq, articles, 10, 0, 2, 2);
   }
   
   @Test public void testDoEndpointTask_smallPageSpecified() throws EndpointException {
     final String PAGE_ARG = "2";
     
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(10, 10)).once();
+    final var articles = generateArticleMockups(10, 10);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -276,23 +283,20 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(PAGE_ARG).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 10, 10, 2, 0);
+    validateSuccessResponse(database, servletReq, articles, 10, 10, 2, 0);
   }
   
   @Test public void testDoEndpointTask_largePageSpecified() throws EndpointException {
     final String PAGE_ARG = "3";
     
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(20, 0)).once();
+    final var articles = generateArticleMockups(20, 0);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -300,23 +304,20 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(PAGE_ARG).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 0, 0, 0, 0);
+    validateSuccessResponse(database, servletReq, articles, 0, 0, 0, 0);
   }
   
   @Test public void testDoEndpointTask_smallLimitSpecified() throws EndpointException {
     final String LIMIT_ARG = "4";
     
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(0, 4)).once();
+    final var articles = generateArticleMockups(0, 4);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -324,23 +325,20 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 4, 0, 2, 2);
+    validateSuccessResponse(database, servletReq, articles, 4, 0, 2, 2);
   }
   
   @Test public void testDoEndpointTask_largeLimitSpecified() throws EndpointException {
     final String LIMIT_ARG = "30";
     
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(0, 20)).once();
+    final var articles = generateArticleMockups(0, 20);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -348,16 +346,12 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 20, 0, 2, 0);
+    validateSuccessResponse(database, servletReq, articles, 20, 0, 2, 0);
   }
   
   @Test public void testDoEndpointTask_pageAndLimitSpecified() throws EndpointException {
@@ -365,7 +359,8 @@ import spark.routematch.RouteMatch;
     final String LIMIT_ARG = "4";
     
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(8, 4)).once();
+    final var articles = generateArticleMockups(8, 4);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -373,23 +368,20 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(PAGE_ARG).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 4, 8, 2, 4);
+    validateSuccessResponse(database, servletReq, articles, 4, 8, 2, 4);
   }
   
   @Test public void testDoEndpointTask_smallSnippetSpecified() throws EndpointException {
     final String LIMIT_ARG = "92";
     
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(0, 10)).once();
+    final var articles = generateArticleMockups(0, 10);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -397,23 +389,20 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(LIMIT_ARG).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 10, 0, 1, 2);
+    validateSuccessResponse(database, servletReq, articles, 10, 0, 1, 2);
   }
   
   @Test public void testDoEndpointTask_largeSnippetSpecified() throws EndpointException {
     final String LIMIT_ARG = "280";
     
     final Database database = EasyMock.createMock(Database.class);
-    EasyMock.expect(database.getArticles()).andReturn(generateArticleMockups(0, 10)).once();
+    final var articles = generateArticleMockups(0, 10);
+    EasyMock.expect(database.getArticles()).andReturn(articles).once();
     EasyMock.replay(database);
     
     PowerMock.mockStatic(Stentor.class);
@@ -421,16 +410,12 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(LIMIT_ARG).once();
     EasyMock.replay(servletReq);
-    Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
-    validateSuccessResponse(req, 10, 0, 3, 2);
+    validateSuccessResponse(database, servletReq, articles, 10, 0, 3, 2);
   }
   
 }

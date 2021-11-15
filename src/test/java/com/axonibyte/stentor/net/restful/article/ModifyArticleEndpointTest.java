@@ -28,13 +28,12 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
-@PrepareForTest({ Stentor.class }) public class ModifyArticleEndpointTest {
+@PrepareForTest({ Stentor.class }) public final class ModifyArticleEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
   private static final String METHOD = "PATCH";
   private static final String ROUTE = "/v1/articles/:article";
   private static final String CHARSET = "UTF-8";
-  private static final String CONTENT_TYPE = "application/json";
   
   private final Endpoint endpoint = new ModifyArticleEndpoint();
   
@@ -48,7 +47,6 @@ import spark.routematch.RouteMatch;
     final ServerInputStringStream reqBody = new ServerInputStringStream("} EAT THE RICH }");
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -74,6 +72,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertTrue(e.toString().startsWith("Syntax error: "));
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_malformedID() throws Exception {
@@ -82,7 +82,6 @@ import spark.routematch.RouteMatch;
     final ServerInputStringStream reqBody = new ServerInputStringStream("{ }");
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -108,6 +107,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 404);
       Assert.assertEquals(e.toString(), "Article not found.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_nonexistentArticle() throws Exception {
@@ -124,7 +125,6 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -150,6 +150,9 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 404);
       Assert.assertEquals(e.toString(), "Article not found.");
     }
+    
+    EasyMock.verify(database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
   @Test public void testDoEndpointTask_successNoMods() throws Exception {
@@ -157,17 +160,8 @@ import spark.routematch.RouteMatch;
     final String path = ROUTE.replace(":article", id.toString());
     final ServerInputStringStream reqBody = new ServerInputStringStream("{ }");
     
-    final String originalTitle = "ORIGINAL TITLE";
-    final String originalContent = "ORIGINAL CONTENT";
-    final UUID originalAuthor = UUID.randomUUID();
-    final long originalTimestamp = System.currentTimeMillis();
-    
-    final Article article = new Article()
-        .setID(id)
-        .setAuthor(originalAuthor)
-        .setTitle(originalTitle)
-        .setContent(originalContent)
-        .setTimestamp(originalTimestamp);
+    final Article article = EasyMock.createMock(Article.class);
+    EasyMock.replay(article);
     
     final Database database = EasyMock.createMock(Database.class);
     EasyMock.expect(database.getArticleByID(id)).andReturn(article).once();
@@ -180,11 +174,7 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(path).once();
     EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(
@@ -204,34 +194,24 @@ import spark.routematch.RouteMatch;
     JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
     Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
     Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article updated.");
-    Assert.assertEquals(article.getID(), id);
-    Assert.assertEquals(article.getTitle(), originalTitle);
-    Assert.assertEquals(article.getContent(), originalContent);
-    Assert.assertEquals(article.getAuthor(), originalAuthor);
-    Assert.assertEquals(article.getTimestamp(), originalTimestamp);
+    
+    EasyMock.verify(article, database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
   @Test public void testDoEndpointTask_successTitleMod() throws Exception{
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":article", id.toString());
-    
-    final String originalTitle = "ORIGINAL TITLE";
-    final String modifiedTitle = "MODIFIED TITLE";
-    final String originalContent = "ORIGINAL CONTENT";
-    final UUID originalAuthor = UUID.randomUUID();
-    final long originalTimestamp = System.currentTimeMillis();
+    final String title = "modified title";
     
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()
-            .put(Article.TITLE_KEY, modifiedTitle)
+            .put(Article.TITLE_KEY, title)
             .toString());
     
-    final Article article = new Article()
-        .setID(id)
-        .setAuthor(originalAuthor)
-        .setTitle(originalTitle)
-        .setContent(originalContent)
-        .setTimestamp(originalTimestamp);
+    final Article article = EasyMock.createMock(Article.class);
+    EasyMock.expect(article.setTitle(title)).andReturn(article).once();
+    EasyMock.replay(article);
     
     final Database database = EasyMock.createMock(Database.class);
     EasyMock.expect(database.getArticleByID(id)).andReturn(article).once();
@@ -244,11 +224,7 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(path).once();
     EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(
@@ -268,34 +244,24 @@ import spark.routematch.RouteMatch;
     JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
     Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
     Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article updated.");
-    Assert.assertEquals(article.getID(), id);
-    Assert.assertEquals(article.getTitle(), modifiedTitle);
-    Assert.assertEquals(article.getContent(), originalContent);
-    Assert.assertEquals(article.getAuthor(), originalAuthor);
-    Assert.assertEquals(article.getTimestamp(), originalTimestamp);
+    
+    EasyMock.verify(article, database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
   @Test public void testDoEndpointTask_successContentMod() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":article", id.toString());
-    
-    final String originalTitle = "ORIGINAL TITLE";
-    final String originalContent = "ORIGINAL CONTENT";
-    final String modifiedContent = "MODIFIED CONTENT";
-    final UUID originalAuthor = UUID.randomUUID();
-    final long originalTimestamp = System.currentTimeMillis();
+    final String content = "modified content";
     
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()
-            .put(Article.CONTENT_KEY, modifiedContent)
+            .put(Article.CONTENT_KEY, content)
             .toString());
     
-    final Article article = new Article()
-        .setID(id)
-        .setAuthor(originalAuthor)
-        .setTitle(originalTitle)
-        .setContent(originalContent)
-        .setTimestamp(originalTimestamp);
+    final Article article = EasyMock.createMock(Article.class);
+    EasyMock.expect(article.setContent(content)).andReturn(article).once();
+    EasyMock.replay(article);
     
     final Database database = EasyMock.createMock(Database.class);
     EasyMock.expect(database.getArticleByID(id)).andReturn(article).once();
@@ -308,11 +274,7 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(path).once();
     EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(
@@ -332,11 +294,9 @@ import spark.routematch.RouteMatch;
     JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
     Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
     Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article updated.");
-    Assert.assertEquals(article.getID(), id);
-    Assert.assertEquals(article.getTitle(), originalTitle);
-    Assert.assertEquals(article.getContent(), modifiedContent);
-    Assert.assertEquals(article.getAuthor(), originalAuthor);
-    Assert.assertEquals(article.getTimestamp(), originalTimestamp);
+    
+    EasyMock.verify(article, database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
 }

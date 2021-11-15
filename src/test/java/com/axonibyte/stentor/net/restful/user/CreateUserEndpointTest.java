@@ -28,7 +28,7 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
-@PrepareForTest({ Stentor.class }) public class CreateUserEndpointTest {
+@PrepareForTest({ Stentor.class }) public final class CreateUserEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
   private static final String METHOD = "POST";
@@ -46,7 +46,6 @@ import spark.routematch.RouteMatch;
     final ServerInputStringStream reqBody = new ServerInputStringStream("} ALL YOUR BASE ARE BELONG TO US {");
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -72,6 +71,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertTrue(e.toString().startsWith("Syntax error: "));
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_missingEmail() throws Exception {
@@ -82,7 +83,6 @@ import spark.routematch.RouteMatch;
             .toString());
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -108,6 +108,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertEquals(e.toString(), "Syntax error: JSONObject[\"email\"] not found.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_missingUsername() throws Exception {
@@ -118,7 +120,6 @@ import spark.routematch.RouteMatch;
             .toString());
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -144,6 +145,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertEquals(e.toString(), "Syntax error: JSONObject[\"username\"] not found.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_missingPassword() throws Exception {
@@ -154,7 +157,6 @@ import spark.routematch.RouteMatch;
             .toString());
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -180,6 +182,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 400);
       Assert.assertEquals(e.toString(), "Syntax error: JSONObject[\"password\"] not found.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_emailConflict() throws Exception {
@@ -199,7 +203,6 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -225,6 +228,9 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 409);
       Assert.assertEquals(e.toString(), "Email address conflict.");
     }
+    
+    EasyMock.verify(database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
   @Test public void testDoEndpointTask_usernameConflict() throws Exception {
@@ -245,7 +251,6 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
@@ -271,6 +276,9 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 409);
       Assert.assertEquals(e.toString(), "Username conflict.");
     }
+    
+    EasyMock.verify(database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
   @Test public void testDoEndpointTask_success() throws Exception {
@@ -294,11 +302,7 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getContentType()).andReturn(CONTENT_TYPE).once();
     EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
     EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(
@@ -318,6 +322,9 @@ import spark.routematch.RouteMatch;
     JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
     Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
     Assert.assertEquals(resBody.get(Endpoint.INFO_KEY), "User created.");
+    
+    EasyMock.verify(database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
 
 }

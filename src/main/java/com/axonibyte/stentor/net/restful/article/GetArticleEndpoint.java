@@ -61,6 +61,7 @@ public class GetArticleEndpoint extends Endpoint {
     
     User user = Stentor.getDatabase().getUserProfileByID(article.getAuthor());
     
+    res.status(200);
     return new JSONObject()
         .put(Endpoint.STATUS_KEY, "ok")
         .put(Endpoint.INFO_KEY, "Retrieved article.")

@@ -6,7 +6,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.json.JSONObject;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -28,7 +27,7 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
-@PrepareForTest({ Stentor.class }) class DeleteArticleEndpointTest {
+@PrepareForTest({ Stentor.class }) public final class DeleteArticleEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
   private static final String METHOD = "DELETE";
@@ -68,6 +67,8 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 404);
       Assert.assertEquals(e.toString(), "Article not found.");
     }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
   }
   
   @Test public void testDoEndpointTask_nonexistentArticle() {
@@ -106,6 +107,9 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(e.getErrorCode(), 404);
       Assert.assertEquals(e.toString(), "Article not found.");
     }
+    
+    EasyMock.verify(database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
   
   @Test public void testDoEndpointTask_success() throws EndpointException {
@@ -126,9 +130,6 @@ import spark.routematch.RouteMatch;
     PowerMock.replay(Stentor.class);
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
-    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
-    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
-    EasyMock.expect(servletReq.getPathInfo()).andReturn(path).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(
         new RouteMatch(null, ROUTE, path, null),
@@ -147,6 +148,9 @@ import spark.routematch.RouteMatch;
     JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
     Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
     Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article deleted.");
+    
+    EasyMock.verify(article, database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
   }
 
 }

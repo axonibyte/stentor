@@ -63,10 +63,10 @@ public class ModifyArticleEndpoint extends Endpoint {
       if(id != null) article = Stentor.getDatabase().getArticleByID(id);
       if(article == null) throw new EndpointException(req, "Article not found.", 404);
       
-      String title = request.has(Article.TITLE_KEY) ? request.getString(Article.TITLE_KEY) : article.getTitle();
-      String content = request.has(Article.CONTENT_KEY) ? request.getString(Article.CONTENT_KEY) : article.getContent();
-      
-      article.setContent(content).setTitle(title);
+      if(request.has(Article.TITLE_KEY))
+        article.setTitle(request.getString(Article.TITLE_KEY));
+      if(request.has(Article.CONTENT_KEY))
+        article.setContent(request.getString(Article.CONTENT_KEY));
       Stentor.getDatabase().setArticle(article);
       
       res.status(202);
