@@ -53,7 +53,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
     EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
     EasyMock.expect(servletReq.getPathInfo()).andReturn(ROUTE).once();
-    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody);
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(
         new RouteMatch(null, ROUTE, ROUTE, null),

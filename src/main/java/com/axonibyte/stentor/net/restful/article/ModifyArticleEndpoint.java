@@ -52,6 +52,7 @@ public class ModifyArticleEndpoint extends Endpoint {
     authorize(authToken, req, res); // require user to be logged in
     
     try {
+      JSONObject request = new JSONObject(req.body());
       UUID id = null;
       
       try {
@@ -59,10 +60,9 @@ public class ModifyArticleEndpoint extends Endpoint {
       } catch(IllegalArgumentException e) { }
       
       Article article = null;
-      article = id == null ? null : Stentor.getDatabase().getArticleByID(id);
+      if(id != null) article = Stentor.getDatabase().getArticleByID(id);
       if(article == null) throw new EndpointException(req, "Article not found.", 404);
       
-      JSONObject request = new JSONObject(req.body());
       String title = request.has(Article.TITLE_KEY) ? request.getString(Article.TITLE_KEY) : article.getTitle();
       String content = request.has(Article.CONTENT_KEY) ? request.getString(Article.CONTENT_KEY) : article.getContent();
       

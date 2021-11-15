@@ -109,7 +109,7 @@ public class Database {
   }
   
   /**
-   * Replaces an article, or creates oneif it does not already exist.
+   * Replaces an article, or creates one if it does not already exist.
    * 
    * @param article the new article
    */
