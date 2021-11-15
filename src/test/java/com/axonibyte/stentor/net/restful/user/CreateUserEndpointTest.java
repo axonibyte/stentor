@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021 Axonibyte Innovations, LLC. All rights reserved.
+ * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
+ */
 package com.axonibyte.stentor.net.restful.user;
 
 import java.util.UUID;
@@ -28,20 +43,36 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
+/**
+ * Test class to test {@link CreateUserEndpoint}.
+ * 
+ * @author Caleb L. Power
+ */
 @PrepareForTest({ Stentor.class }) public final class CreateUserEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
   private static final String METHOD = "POST";
   private static final String ROUTE = "/v1/users";
   private static final String CHARSET = "UTF-8";
-  private static final String CONTENT_TYPE = "application/json";
   
   private final Endpoint endpoint = new CreateUserEndpoint();
   
+  /**
+   * Retrieves the PowerMock object factory for TestNG.
+   * 
+   * @return an instance of PowerMock's object factory
+   */
   @ObjectFactory public IObjectFactory getObjectFactory() {
     return new org.powermock.modules.testng.PowerMockObjectFactory();
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed request body is sent.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_malformedBody() throws Exception {
     final ServerInputStringStream reqBody = new ServerInputStringStream("} ALL YOUR BASE ARE BELONG TO US {");
     
@@ -75,6 +106,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the email is not present in the
+   * body of the request.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_missingEmail() throws Exception {
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()
@@ -112,6 +151,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the username is not present in the
+   * body of the request.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_missingUsername() throws Exception {
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()
@@ -149,6 +196,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the username is not present in the
+   * body of the request.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_missingPassword() throws Exception {
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()
@@ -186,6 +241,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the user's intended email address
+   * matches one already in the database.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_emailConflict() throws Exception {
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()
@@ -233,6 +296,14 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the user's intended username
+   * matches one already in the database.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_usernameConflict() throws Exception {
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()
@@ -281,6 +352,14 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it behaves appropriately when presented with well-formed
+   * input data.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_success() throws Exception {
     final ServerInputStringStream reqBody = new ServerInputStringStream(
         new JSONObject()

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021 Axonibyte Innovations, LLC. All rights reserved.
+ * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
+ */
 package com.axonibyte.stentor.net.restful.user;
 
 import java.util.UUID;
@@ -20,6 +35,7 @@ import com.axonibyte.stentor.net.ServerInputStringStream;
 import com.axonibyte.stentor.net.auth.AuthToken;
 import com.axonibyte.stentor.net.restful.Endpoint;
 import com.axonibyte.stentor.net.restful.EndpointException;
+import com.axonibyte.stentor.net.restful.article.ModifyArticleEndpoint;
 import com.axonibyte.stentor.persistent.Database;
 import com.axonibyte.stentor.persistent.User;
 
@@ -28,20 +44,36 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
+/**
+ * Test class to test {@link ModifyUserEndpoint}
+ * 
+ * @author Caleb L. Power
+ */
 @PrepareForTest({ Stentor.class }) public class ModifyUserEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
   private static final String METHOD = "PATCH";
   private static final String ROUTE = "/v1/users/:user";
   private static final String CHARSET = "UTF-8";
-  private static final String CONTENT_TYPE = "application/json";
   
   private final Endpoint endpoint = new ModifyUserEndpoint();
   
+  /**
+   * Retrieves the PowerMock object factory for TestNG.
+   * 
+   * @return an instance of PowerMock's object factory
+   */
   @ObjectFactory public IObjectFactory getObjectFactory() {
     return new org.powermock.modules.testng.PowerMockObjectFactory();
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed request body is sent.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_malformedBody() throws Exception {
     final String id = UUID.randomUUID().toString();
     final String path = ROUTE.replace(":article", id);
@@ -77,6 +109,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed ID is passed as a URL
+   * argument.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_malformedID() throws Exception {
     final String id = "BAD_ID";
     final String path = ROUTE.replace(":user", id);
@@ -112,6 +152,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a well-formed ID that matches no
+   * known user is passed as a URL argument.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_nonexistentUser() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -156,6 +204,13 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that a user cannot modify another user's profile.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of this test method
+   */
   @Test public void testDoEndpointTask_badAuthMismatchedUser() throws Exception {
     final UUID aliceID = new UUID(1, 1);
     final UUID bobID = new UUID(3, 5);
@@ -209,6 +264,16 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when well-formed JSON containing no directives to
+   * modify any particular member of the user is passed via request body. This
+   * use case denotes similar functionality to the <code>touch</code> command
+   * on UNIX-like machines.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successNoMods() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -255,6 +320,15 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the user's email address is being
+   * changed and the intended email address is already mapped to another
+   * distinct user in the database.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_conflictingEmail() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -314,6 +388,15 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution on the edge case where the user's profile is set
+   * for their email address to change to a new email address identical to
+   * their old email address.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successIdenticalEmail() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -365,6 +448,14 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when the a user's email address is to be changed
+   * and there are no conflicts in the database.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successModifiedEmail() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -418,7 +509,16 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(user, database, servletReq, servletRes, authToken);
     PowerMock.verify(Stentor.class);
   }
-    
+  
+  /**
+   * Tests {@link CreateUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the user's username is being
+   * changed and the intended username is already mapped to another
+   * distinct user in the database.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_conflictingUsername() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -478,6 +578,15 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution on the edge case where the user's profile is set
+   * for their username to change to a new username identical to
+   * their old username.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successIdenticalUsername() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -529,6 +638,14 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when the a user's username is to be changed
+   * and there are no conflicts in the database.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successModifiedUsername() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());
@@ -583,6 +700,13 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution of a valid password change.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successModifiedPassword() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":user", id.toString());

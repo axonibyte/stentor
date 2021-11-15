@@ -54,6 +54,7 @@ public class Database {
    * @param port mongo's binding port
    * @param username the database user
    * @param password the password for the database user
+   * @param database the name of the database
    * @param sslEnabled true iff ssl/tls should be enabled
    */
   public Database(String proto, String host, int port, String username, String password, String database, boolean sslEnabled) {

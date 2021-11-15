@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021 Axonibyte Innovations, LLC. All rights reserved.
+ * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
+ */
 package com.axonibyte.stentor.net.restful.article;
 
 import java.util.ArrayList;
@@ -33,6 +48,11 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
+/**
+ * Test class to test {@link ListArticlesEndpoint}.
+ * 
+ * @author Caleb L. Power
+ */
 @PrepareForTest({ Stentor.class }) public final class ListArticlesEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
@@ -48,10 +68,19 @@ import spark.routematch.RouteMatch;
       " length. Bah weep granah weep nini bon!" // 39 characters, sum = 181
   };
   
+  /**
+   * Retrieves the PowerMock object factory for TestNG.
+   * 
+   * @return an instance of PowerMock's object factory
+   */
   @ObjectFactory public IObjectFactory getObjectFactory() {
     return new org.powermock.modules.testng.PowerMockObjectFactory();
   }
   
+  /**
+   * Populates a list articles for use in testing during the execution of
+   * various test methods in this class. Executes before said methods.
+   */
   @BeforeClass public void setup_populateArticleArr() {
     long timestamp = System.currentTimeMillis() - 1000L;
     for(int i = 1; i <= 20; i++) {
@@ -130,6 +159,11 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed page number is passed
+   * as a URL query argument.
+   */
   @Test public void testDoEndpointTask_pageInvalid() {
     final String BAD_PAGE_ARG = "2BADBEEF";
     
@@ -159,6 +193,11 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a bad (non-positive) page range is
+   * passed as a URL query argument.
+   */
   @Test public void testDoEndpointTask_pageBadRange() {
     final String BAD_PAGE_ARG = "0";
     
@@ -190,6 +229,11 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed limit is passed as a
+   * URL query argument.
+   */
   @Test public void testDoEndpointTask_limitInvalid() {
     final String BAD_LIMIT_ARG = "FADE2BAD";
     
@@ -220,6 +264,11 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a bad (non-positive) limit is
+   * passed as a URL query argument.
+   */
   @Test public void testDoEndpointTask_limitBadRange() {
     final String BAD_LIMIT_ARG = "0";
     
@@ -251,6 +300,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletRes, servletReq, authToken);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it successfully lists articles using the default parameter
+   * values when no query arguments are passed.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_successDefault() throws EndpointException {
     final Database database = EasyMock.createMock(Database.class);
     final var articles = generateArticleMockups(0, 10);
@@ -270,6 +327,14 @@ import spark.routematch.RouteMatch;
     validateSuccessResponse(database, servletReq, articles, 10, 0, 2, 2);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it successfully lists articles when a relatively low page
+   * number is specified.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_smallPageSpecified() throws EndpointException {
     final String PAGE_ARG = "2";
     
@@ -291,6 +356,14 @@ import spark.routematch.RouteMatch;
     validateSuccessResponse(database, servletReq, articles, 10, 10, 2, 0);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it successfully returns, but does not list out-of-range
+   * articles when a relatively high page number is specified.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_largePageSpecified() throws EndpointException {
     final String PAGE_ARG = "3";
     
@@ -312,6 +385,14 @@ import spark.routematch.RouteMatch;
     validateSuccessResponse(database, servletReq, articles, 0, 0, 0, 0);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it successfully lists articles when a relatively small
+   * limit is specified.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_smallLimitSpecified() throws EndpointException {
     final String LIMIT_ARG = "4";
     
@@ -333,6 +414,14 @@ import spark.routematch.RouteMatch;
     validateSuccessResponse(database, servletReq, articles, 4, 0, 2, 2);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it successfully lists all articles when a limit greater
+   * than the number of items available is specified.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_largeLimitSpecified() throws EndpointException {
     final String LIMIT_ARG = "30";
     
@@ -354,6 +443,14 @@ import spark.routematch.RouteMatch;
     validateSuccessResponse(database, servletReq, articles, 20, 0, 2, 0);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it successfully list the appropriate range and quantity of
+   * articles when both the page and limit are specified.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_pageAndLimitSpecified() throws EndpointException {
     final String PAGE_ARG = "3";
     final String LIMIT_ARG = "4";
@@ -376,6 +473,14 @@ import spark.routematch.RouteMatch;
     validateSuccessResponse(database, servletReq, articles, 4, 8, 2, 4);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it successfully truncates the snippet at the appropriate length
+   * in such a manner in which it does divide a word in an unreadable fashion.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_smallSnippetSpecified() throws EndpointException {
     final String LIMIT_ARG = "92";
     
@@ -397,6 +502,15 @@ import spark.routematch.RouteMatch;
     validateSuccessResponse(database, servletReq, articles, 10, 0, 1, 2);
   }
   
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that is successfully returns the entirety of an article's
+   * content if the specified truncation length is larger than the length of
+   * the content itself.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_largeSnippetSpecified() throws EndpointException {
     final String LIMIT_ARG = "280";
     

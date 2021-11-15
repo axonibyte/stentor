@@ -33,7 +33,14 @@ import spark.Response;
  */
 public abstract class Endpoint {
   
+  /**
+   * The key associated with the response status short message.
+   */
   public static final String STATUS_KEY = "status";
+  
+  /**
+   * The key associated with the response informational message.
+   */
   public static final String INFO_KEY = "info";
   
   private HTTPMethod[] methods = null;

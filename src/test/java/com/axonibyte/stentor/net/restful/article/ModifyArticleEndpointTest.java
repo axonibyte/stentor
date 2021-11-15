@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021 Axonibyte Innovations, LLC. All rights reserved.
+ * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
+ */
 package com.axonibyte.stentor.net.restful.article;
 
 import java.util.UUID;
@@ -28,6 +43,11 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
+/**
+ * Test class to test {@link ModifyArticleEndpoint}
+ * 
+ * @author Caleb L. Power
+ */
 @PrepareForTest({ Stentor.class }) public final class ModifyArticleEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
@@ -37,10 +57,22 @@ import spark.routematch.RouteMatch;
   
   private final Endpoint endpoint = new ModifyArticleEndpoint();
   
+  /**
+   * Retrieves the PowerMock object factory for TestNG.
+   * 
+   * @return an instance of PowerMock's object factory
+   */
   @ObjectFactory public IObjectFactory getObjectFactory() {
     return new org.powermock.modules.testng.PowerMockObjectFactory();
   }
   
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed request body is sent.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_malformedBody() throws Exception {
     final String id = UUID.randomUUID().toString();
     final String path = ROUTE.replace(":article", id);
@@ -76,6 +108,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed ID is passed as a URL
+   * argument.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_malformedID() throws Exception {
     final String id = "BAD_ID";
     final String path = ROUTE.replace(":article", id);
@@ -111,6 +151,14 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a well-formed ID that matches no
+   * known article is passed as a URL argument.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_nonexistentArticle() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":article", id.toString());
@@ -155,6 +203,16 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when well-formed JSON containing no directives to
+   * modify any particular member of the article is passed via request body.
+   * This use case denotes similar functionality to the <code>touch</code>
+   * command on UNIX-like machines.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successNoMods() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":article", id.toString());
@@ -199,6 +257,14 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when well-formed JSON containing only a directive
+   * to modify the article's title is passed via request body.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successTitleMod() throws Exception{
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":article", id.toString());
@@ -249,6 +315,14 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when well-formed JSON containing only a directive
+   * to modify the article's content is passed via request body.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
   @Test public void testDoEndpointTask_successContentMod() throws Exception {
     final UUID id = UUID.randomUUID();
     final String path = ROUTE.replace(":article", id.toString());

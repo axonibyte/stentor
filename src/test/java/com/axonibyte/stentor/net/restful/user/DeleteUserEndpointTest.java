@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021 Axonibyte Innovations, LLC. All rights reserved.
+ * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
+ */
 package com.axonibyte.stentor.net.restful.user;
 
 import java.util.UUID;
@@ -27,6 +42,11 @@ import spark.RequestResponseFactory;
 import spark.Response;
 import spark.routematch.RouteMatch;
 
+/**
+ * Test class to test {@link DeleteUserEndpoint}.
+ * 
+ * @author Caleb L. Power
+ */
 @PrepareForTest({ Stentor.class }) public final class DeleteUserEndpointTest {
   
   private static final String REMOTE_ADDR = "127.0.0.1";
@@ -35,10 +55,20 @@ import spark.routematch.RouteMatch;
   
   private final Endpoint endpoint = new DeleteUserEndpoint();
   
+  /**
+   * Retrieves the PowerMock object factory for TestNG.
+   * 
+   * @return an instance of PowerMock's object factory
+   */
   @ObjectFactory public IObjectFactory getObjectFactory() {
     return new org.powermock.modules.testng.PowerMockObjectFactory();
   }
   
+  /**
+   * Tests {@link DeleteUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed user ID is passed as a
+   * URL argument.
+   */
   @Test public void testDoEndpointTask_badID() {
     final String id = "BAD_ID";
     final String path = ROUTE.replace(":user", id);
@@ -71,6 +101,11 @@ import spark.routematch.RouteMatch;
     EasyMock.verify(servletReq, servletRes, authToken);
   }
   
+  /**
+   * Tests {@link DeleteUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when the provided well-formed user ID
+   * does not match a known user in the database.
+   */
   @Test public void testDoEndpointTask_nonexistentUser() {
     final UUID id = new UUID(0, 0);
     final String path = ROUTE.replace(":user", id.toString());
@@ -112,6 +147,14 @@ import spark.routematch.RouteMatch;
     PowerMock.verify(Stentor.class);
   }
   
+  /**
+   * Tests {@link DeleteUserEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it behaves appropriately when it is provided with input
+   * that is well-formed and otherwise valid.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
   @Test public void testDoEndpointTask_success() throws EndpointException {
     final UUID id = new UUID(0, 0);
     final String path = ROUTE.replace(":user", id.toString());
