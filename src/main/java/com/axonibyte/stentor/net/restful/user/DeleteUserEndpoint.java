@@ -52,7 +52,7 @@ public class DeleteUserEndpoint extends Endpoint {
     UUID id = null;
     
     try {
-      id = UUID.fromString(req.params("article"));
+      id = UUID.fromString(req.params("user"));
     } catch(IllegalArgumentException e) { }
     
     if(id == null || Stentor.getDatabase().getUserProfileByID(id) == null)
