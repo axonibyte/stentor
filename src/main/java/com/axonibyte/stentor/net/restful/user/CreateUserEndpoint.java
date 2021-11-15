@@ -58,10 +58,10 @@ public class CreateUserEndpoint extends Endpoint {
       String password = request.getString(User.PASSWORD_KEY);
       
       if(Stentor.getDatabase().getUserProfileByEmail(email) != null)
-        throw new EndpointException(req, "Email already exists.", 409);
+        throw new EndpointException(req, "Email address conflict.", 409);
       
       if(Stentor.getDatabase().getUserProfileByUsername(username) != null)
-        throw new EndpointException(req, "Username already exists.", 409);
+        throw new EndpointException(req, "Username conflict.", 409);
       
       UUID uuid = null;
       do uuid = UUID.randomUUID();
