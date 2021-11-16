@@ -1,0 +1,10 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="dbConnectorTestSuite" verbose="10" object-factory="org.powermock.modules.testng.PowerMockObjectFactory">
+  <test name="mongoDBTest">
+    <classes>
+      <class name="com.axonibyte.stentor.persistent.DatabaseTest" />
+    </classes>
+  </test>
+</suite>

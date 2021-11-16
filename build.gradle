@@ -23,6 +23,7 @@ dependencies {
   implementation 'org.json:json:20210307'
   implementation 'org.mongodb:mongodb-driver-sync:4.3.3'
   implementation 'org.slf4j:slf4j-simple:1.7.32'
+  testImplementation 'de.bwaldvogel:mongo-java-server:1.39.0'
   testImplementation 'org.easymock:easymock:4.3'
   testImplementation 'org.powermock:powermock-api-easymock:2.0.9'
   testImplementation 'org.powermock:powermock-module-testng:2.0.9'

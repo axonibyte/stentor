@@ -1,0 +1,376 @@
+/*
+ * Copyright (c) 2021 Axonibyte Innovations, LLC. All rights reserved.
+ * 
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *   
+ *   https://apache.org/licenses/LICENSE-2.0
+ *   
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the license.
+ */
+package com.axonibyte.stentor.net.restful.article;
+
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.easymock.EasyMock;
+import org.json.JSONObject;
+import org.powermock.api.easymock.PowerMock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.testng.Assert;
+import org.testng.IObjectFactory;
+import org.testng.annotations.ObjectFactory;
+import org.testng.annotations.Test;
+
+import com.axonibyte.stentor.EmptyAnswer;
+import com.axonibyte.stentor.Stentor;
+import com.axonibyte.stentor.net.ServerInputStringStream;
+import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.net.restful.Endpoint;
+import com.axonibyte.stentor.net.restful.EndpointException;
+import com.axonibyte.stentor.persistent.Article;
+import com.axonibyte.stentor.persistent.Database;
+
+import spark.Request;
+import spark.RequestResponseFactory;
+import spark.Response;
+import spark.routematch.RouteMatch;
+
+/**
+ * Test class to test {@link ModifyArticleEndpoint}
+ * 
+ * @author Caleb L. Power
+ */
+@PrepareForTest({ Stentor.class }) public final class ModifyArticleEndpointTest {
+  
+  private static final String REMOTE_ADDR = "127.0.0.1";
+  private static final String METHOD = "PATCH";
+  private static final String ROUTE = "/v1/articles/:article";
+  private static final String CHARSET = "UTF-8";
+  
+  private final Endpoint endpoint = new ModifyArticleEndpoint();
+  
+  /**
+   * Retrieves the PowerMock object factory for TestNG.
+   * 
+   * @return an instance of PowerMock's object factory
+   */
+  @ObjectFactory public IObjectFactory getObjectFactory() {
+    return new org.powermock.modules.testng.PowerMockObjectFactory();
+  }
+  
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed request body is sent.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
+  @Test public void testDoEndpointTask_malformedBody() throws Exception {
+    final String id = UUID.randomUUID().toString();
+    final String path = ROUTE.replace(":article", id);
+    final ServerInputStringStream reqBody = new ServerInputStringStream("} EAT THE RICH }");
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
+    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
+    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
+    EasyMock.expect(servletReq.getPathInfo()).andReturn(path).once();
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(
+        new RouteMatch(null, ROUTE, path, null),
+        servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    try {
+      endpoint.doEndpointTask(req, res, authToken);
+      Assert.fail("An EndpointException was not thrown.");
+    } catch(EndpointException e) {
+      Assert.assertEquals(e.getErrorCode(), 400);
+      Assert.assertTrue(e.toString().startsWith("Syntax error: "));
+    }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
+  }
+  
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a malformed ID is passed as a URL
+   * argument.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
+  @Test public void testDoEndpointTask_malformedID() throws Exception {
+    final String id = "BAD_ID";
+    final String path = ROUTE.replace(":article", id);
+    final ServerInputStringStream reqBody = new ServerInputStringStream("{ }");
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
+    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
+    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
+    EasyMock.expect(servletReq.getPathInfo()).andReturn(path).once();
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(
+        new RouteMatch(null, ROUTE, path, null),
+        servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    try {
+      endpoint.doEndpointTask(req, res, authToken);
+      Assert.fail("An EndpointException was not thrown.");
+    } catch(EndpointException e) {
+      Assert.assertEquals(e.getErrorCode(), 404);
+      Assert.assertEquals(e.toString(), "Article not found.");
+    }
+    
+    EasyMock.verify(servletReq, servletRes, authToken);
+  }
+  
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it fails gracefully when a well-formed ID that matches no
+   * known article is passed as a URL argument.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
+  @Test public void testDoEndpointTask_nonexistentArticle() throws Exception {
+    final UUID id = UUID.randomUUID();
+    final String path = ROUTE.replace(":article", id.toString());
+    final ServerInputStringStream reqBody = new ServerInputStringStream("{ }");
+    
+    final Database database = EasyMock.createMock(Database.class);
+    EasyMock.expect(database.getArticleByID(id)).andReturn(null).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).once();
+    PowerMock.replay(Stentor.class);
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
+    EasyMock.expect(servletReq.getRemoteAddr()).andReturn(REMOTE_ADDR).once();
+    EasyMock.expect(servletReq.getMethod()).andReturn(METHOD).once();
+    EasyMock.expect(servletReq.getPathInfo()).andReturn(path).once();
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(
+        new RouteMatch(null, ROUTE, path, null),
+        servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    try {
+      endpoint.doEndpointTask(req, res, authToken);
+      Assert.fail("An EndpointException was not thrown.");
+    } catch(EndpointException e) {
+      Assert.assertEquals(e.getErrorCode(), 404);
+      Assert.assertEquals(e.toString(), "Article not found.");
+    }
+    
+    EasyMock.verify(database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
+  }
+  
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when well-formed JSON containing no directives to
+   * modify any particular member of the article is passed via request body.
+   * This use case denotes similar functionality to the <code>touch</code>
+   * command on UNIX-like machines.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
+  @Test public void testDoEndpointTask_successNoMods() throws Exception {
+    final UUID id = UUID.randomUUID();
+    final String path = ROUTE.replace(":article", id.toString());
+    final ServerInputStringStream reqBody = new ServerInputStringStream("{ }");
+    
+    final Article article = EasyMock.createMock(Article.class);
+    EasyMock.replay(article);
+    
+    final Database database = EasyMock.createMock(Database.class);
+    EasyMock.expect(database.getArticleByID(id)).andReturn(article).once();
+    database.setArticle(article);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).times(2);
+    PowerMock.replay(Stentor.class);
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(
+        new RouteMatch(null, ROUTE, path, null),
+        servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    servletRes.setStatus(202);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
+    Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
+    Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article updated.");
+    
+    EasyMock.verify(article, database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
+  }
+  
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when well-formed JSON containing only a directive
+   * to modify the article's title is passed via request body.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
+  @Test public void testDoEndpointTask_successTitleMod() throws Exception{
+    final UUID id = UUID.randomUUID();
+    final String path = ROUTE.replace(":article", id.toString());
+    final String title = "modified title";
+    
+    final ServerInputStringStream reqBody = new ServerInputStringStream(
+        new JSONObject()
+            .put(Article.TITLE_KEY, title)
+            .toString());
+    
+    final Article article = EasyMock.createMock(Article.class);
+    EasyMock.expect(article.setTitle(title)).andReturn(article).once();
+    EasyMock.replay(article);
+    
+    final Database database = EasyMock.createMock(Database.class);
+    EasyMock.expect(database.getArticleByID(id)).andReturn(article).once();
+    database.setArticle(article);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).times(2);
+    PowerMock.replay(Stentor.class);
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(
+        new RouteMatch(null, ROUTE, path, null),
+        servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    servletRes.setStatus(202);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
+    Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
+    Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article updated.");
+    
+    EasyMock.verify(article, database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
+  }
+  
+  /**
+   * Tests {@link ModifyArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * for successful execution when well-formed JSON containing only a directive
+   * to modify the article's content is passed via request body.
+   * 
+   * @throws Exception iff any exception other than {@link EndpointException}
+   *         is thrown during the execution of the test method
+   */
+  @Test public void testDoEndpointTask_successContentMod() throws Exception {
+    final UUID id = UUID.randomUUID();
+    final String path = ROUTE.replace(":article", id.toString());
+    final String content = "modified content";
+    
+    final ServerInputStringStream reqBody = new ServerInputStringStream(
+        new JSONObject()
+            .put(Article.CONTENT_KEY, content)
+            .toString());
+    
+    final Article article = EasyMock.createMock(Article.class);
+    EasyMock.expect(article.setContent(content)).andReturn(article).once();
+    EasyMock.replay(article);
+    
+    final Database database = EasyMock.createMock(Database.class);
+    EasyMock.expect(database.getArticleByID(id)).andReturn(article).once();
+    database.setArticle(article);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).times(2);
+    PowerMock.replay(Stentor.class);
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody).once();
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(
+        new RouteMatch(null, ROUTE, path, null),
+        servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    servletRes.setStatus(202);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
+    Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
+    Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article updated.");
+    
+    EasyMock.verify(article, database, servletReq, servletRes, authToken);
+    PowerMock.verify(Stentor.class);
+  }
+  
+}

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the license.
  */
-package com.axonibyte.stentor.net.restful;
+package com.axonibyte.stentor.net.restful.article;
 
 import java.util.UUID;
 
@@ -23,57 +23,54 @@ import org.json.JSONObject;
 import com.axonibyte.stentor.Stentor;
 import com.axonibyte.stentor.net.APIVersion;
 import com.axonibyte.stentor.net.auth.AuthToken;
-import com.axonibyte.stentor.persistent.User;
+import com.axonibyte.stentor.net.restful.Endpoint;
+import com.axonibyte.stentor.net.restful.EndpointException;
+import com.axonibyte.stentor.net.restful.HTTPMethod;
+import com.axonibyte.stentor.persistent.Article;
 
 import spark.Request;
 import spark.Response;
 
 /**
- * Endpoint to handle user creation.
+ * Endpoint to handle article creation.
  * 
  * @author Caleb L. Power
  */
-public class CreateUserEndpoint extends Endpoint {
-  
+public class CreateArticleEndpoint extends Endpoint {
+
   /**
    * Instantiates the endpoint.
    */
-  public CreateUserEndpoint() {
-    super("/users", APIVersion.VERSION_1, HTTPMethod.POST);
+  public CreateArticleEndpoint() {
+    super("/articles", APIVersion.VERSION_1, HTTPMethod.POST);
   }
   
   /**
    * {@inheritDoc}
    */
   @Override public JSONObject doEndpointTask(Request req, Response res, AuthToken authToken) throws EndpointException {
-    authorize(authToken, req, res); // require user to be logged in
+    authorize(authToken, req, res);
     
     try {
       JSONObject request = new JSONObject(req.body());
-      String email = request.getString(User.EMAIL_KEY);
-      String username = request.getString(User.USERNAME_KEY);
-      String password = request.getString(User.PASSWORD_KEY);
-      
-      if(Stentor.getDatabase().getUserProfileByEmail(email) != null)
-        throw new EndpointException(req, "Email already exists.", 409);
-      
-      if(Stentor.getDatabase().getUserProfileByUsername(username) != null)
-        throw new EndpointException(req, "Username already exists.", 409);
+      String title = request.getString(Article.TITLE_KEY);
+      String content = request.getString(Article.CONTENT_KEY);
       
       UUID uuid = null;
       do uuid = UUID.randomUUID();
-      while(Stentor.getDatabase().getUserProfileByID(uuid) != null);
+      while(Stentor.getDatabase().getArticleByID(uuid) != null);
       
-      Stentor.getDatabase().setUserProfile(new User()
-          .setEmail(email)
-          .setUsername(username)
-          .setPassword(password)
-          .setID(uuid));
+      Stentor.getDatabase().setArticle(new Article()
+          .setAuthor(authToken.getUser().getID())
+          .setTitle(title)
+          .setContent(content)
+          .setID(uuid)
+          .setTimestamp(System.currentTimeMillis()));
       
       res.status(201);
       return new JSONObject()
           .put(Endpoint.STATUS_KEY, "ok")
-          .put(Endpoint.INFO_KEY, "User created.");
+          .put(Endpoint.INFO_KEY, "Article created.");
       
     } catch(JSONException e) {
       throw new EndpointException(req, "Syntax error: " + e.getMessage(), 400, e);

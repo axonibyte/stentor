@@ -79,6 +79,16 @@ public class Stentor {
    * @param args command-line arguments
    */
   public static void main(String[] args) {
+    bootstrap(args);
+  }
+  
+  /**
+   * Bootstraps the program. This is distinct from the main method to make
+   * testing a little bit easier.
+   * 
+   * @param args command-line arguments
+   */
+  public static void bootstrap(String[] args) {
     try {
       Options options = new Options();
       options.addOption(ADD_ADMIN_SWITCH_SHORT, ADD_ADMIN_SWITCH_LONG, false,

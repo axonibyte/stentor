@@ -158,7 +158,7 @@ public class User {
   }
   
   /**
-   * Verifies a provided password against the saved passwor dhash.
+   * Verifies a provided password against the saved password hash.
    * 
    * @param password the provided password
    * @return <code>true</code> iff the password checks out

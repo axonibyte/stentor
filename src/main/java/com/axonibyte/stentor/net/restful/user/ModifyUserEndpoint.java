@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the license.
  */
-package com.axonibyte.stentor.net.restful;
+package com.axonibyte.stentor.net.restful.user;
 
 import java.util.UUID;
 
@@ -23,6 +23,9 @@ import org.json.JSONObject;
 import com.axonibyte.stentor.Stentor;
 import com.axonibyte.stentor.net.APIVersion;
 import com.axonibyte.stentor.net.auth.AuthToken;
+import com.axonibyte.stentor.net.restful.Endpoint;
+import com.axonibyte.stentor.net.restful.EndpointException;
+import com.axonibyte.stentor.net.restful.HTTPMethod;
 import com.axonibyte.stentor.persistent.User;
 
 import spark.Request;
@@ -49,6 +52,7 @@ public class ModifyUserEndpoint extends Endpoint {
     authorize(authToken, req, res); // require user to be logged in
     
     try {
+      JSONObject request = new JSONObject(req.body());
       UUID id = null;
       
       try {
@@ -56,27 +60,29 @@ public class ModifyUserEndpoint extends Endpoint {
       } catch(IllegalArgumentException e) { }
       
       User user = null;
-      user = id == null ? null : Stentor.getDatabase().getUserProfileByID(id);
+      if(id != null) user = Stentor.getDatabase().getUserProfileByID(id);
       if(user == null) throw new EndpointException(req, "User not found.", 404);
       
       if(!authToken.getUser().getID().equals(id))
         throw new EndpointException(req, "Access denied.", 403);
       
-      JSONObject request = new JSONObject(req.body());
-      String email = request.has(User.EMAIL_KEY) ? request.getString(User.EMAIL_KEY) : user.getEmail();
-      String username = request.has(User.USERNAME_KEY) ? request.getString(User.USERNAME_KEY) : user.getUsername();
+      String email = request.has(User.EMAIL_KEY) ? request.getString(User.EMAIL_KEY) : null;
+      String username = request.has(User.USERNAME_KEY) ? request.getString(User.USERNAME_KEY) : null;
       String password = request.has(User.PASSWORD_KEY) ? request.getString(User.PASSWORD_KEY) : null;
       
-      if(!email.equalsIgnoreCase(user.getEmail())
-          && Stentor.getDatabase().getUserProfileByEmail(email) != null)
-        throw new EndpointException(req, "Email already exists.", 409);
+      if(email != null && !email.equalsIgnoreCase(user.getEmail())) {
+        if(Stentor.getDatabase().getUserProfileByEmail(email) != null)
+          throw new EndpointException(req, "Email address conflict.", 409);
+        user.setEmail(email);
+      }
       
-      if(!username.equalsIgnoreCase(user.getUsername())
-          && Stentor.getDatabase().getUserProfileByUsername(username) != null)
-        throw new EndpointException(req, "Username already exists.", 409);
+      if(username != null && !username.equalsIgnoreCase(user.getUsername())) {
+        if(Stentor.getDatabase().getUserProfileByUsername(username) != null)
+          throw new EndpointException(req, "Username conflict.", 409);
+        user.setUsername(username);
+      }
       
       if(password != null) user.setPassword(password);
-      user.setEmail(email).setUsername(username);
       
       Stentor.getDatabase().setUserProfile(user);
       

@@ -40,8 +40,15 @@ import com.mongodb.client.model.Filters;
  */
 public class Database {
   
-  private static String COLLECTION_ARTICLE = "article";
-  private static String COLLECTION_USER = "user";
+  /**
+   * Denotes the collection that article documents are stored in.
+   */
+  public static String COLLECTION_ARTICLE = "article";
+  
+  /**
+   * Denotes the collection that user documents are stored in.
+   */
+  public static String COLLECTION_USER = "user";
   
   private MongoClient mongoClient = null;
   private String dbName = null;
@@ -54,6 +61,7 @@ public class Database {
    * @param port mongo's binding port
    * @param username the database user
    * @param password the password for the database user
+   * @param database the name of the database
    * @param sslEnabled true iff ssl/tls should be enabled
    */
   public Database(String proto, String host, int port, String username, String password, String database, boolean sslEnabled) {
@@ -109,7 +117,7 @@ public class Database {
   }
   
   /**
-   * Replaces an article, or creates oneif it does not already exist.
+   * Replaces an article, or creates one if it does not already exist.
    * 
    * @param article the new article
    */

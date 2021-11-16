@@ -26,16 +26,16 @@ import org.json.JSONObject;
 
 import com.axonibyte.stentor.log.Logger;
 import com.axonibyte.stentor.net.auth.AuthTokenManager;
-import com.axonibyte.stentor.net.restful.CreateArticleEndpoint;
-import com.axonibyte.stentor.net.restful.CreateUserEndpoint;
-import com.axonibyte.stentor.net.restful.DeleteArticleEndpoint;
-import com.axonibyte.stentor.net.restful.DeleteUserEndpoint;
 import com.axonibyte.stentor.net.restful.Endpoint;
-import com.axonibyte.stentor.net.restful.GetArticleEndpoint;
 import com.axonibyte.stentor.net.restful.HTTPMethod;
-import com.axonibyte.stentor.net.restful.ListArticlesEndpoint;
-import com.axonibyte.stentor.net.restful.ModifyArticleEndpoint;
-import com.axonibyte.stentor.net.restful.ModifyUserEndpoint;
+import com.axonibyte.stentor.net.restful.article.CreateArticleEndpoint;
+import com.axonibyte.stentor.net.restful.article.DeleteArticleEndpoint;
+import com.axonibyte.stentor.net.restful.article.GetArticleEndpoint;
+import com.axonibyte.stentor.net.restful.article.ListArticlesEndpoint;
+import com.axonibyte.stentor.net.restful.article.ModifyArticleEndpoint;
+import com.axonibyte.stentor.net.restful.user.CreateUserEndpoint;
+import com.axonibyte.stentor.net.restful.user.DeleteUserEndpoint;
+import com.axonibyte.stentor.net.restful.user.ModifyUserEndpoint;
 
 /**
  * API Driver; manages RESTful and WebSocket API endpoints.
