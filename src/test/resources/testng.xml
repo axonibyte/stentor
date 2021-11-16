@@ -6,5 +6,6 @@
     <suite-file path="suites/modelTestSuite.xml" />
     <suite-file path="suites/apiTestSuite.xml" />
     <suite-file path="suites/authTestSuite.xml" />
+    <suite-file path="suites/dbTestSuite.xml" />
   </suite-files>
 </suite>

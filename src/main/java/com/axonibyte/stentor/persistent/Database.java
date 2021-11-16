@@ -40,8 +40,15 @@ import com.mongodb.client.model.Filters;
  */
 public class Database {
   
-  private static String COLLECTION_ARTICLE = "article";
-  private static String COLLECTION_USER = "user";
+  /**
+   * Denotes the collection that article documents are stored in.
+   */
+  public static String COLLECTION_ARTICLE = "article";
+  
+  /**
+   * Denotes the collection that user documents are stored in.
+   */
+  public static String COLLECTION_USER = "user";
   
   private MongoClient mongoClient = null;
   private String dbName = null;
