@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.easymock.EasyMock;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -198,11 +199,11 @@ import spark.routematch.RouteMatch;
   /**
    * Tests {@link CreateArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
    * to ensure that it behaves appropriately when it is provided with input
-   * that is well-formed and otherwise valid.
+   * that is well-formed and otherwise valid (without tags, which are optional).
    * 
    * @throws Exception iff any exception is thrown during execution.
    */
-  @Test public void testDoEndpointTask_success() throws Exception {
+  @Test public void testDoEndpointTask_successNoTags() throws Exception {
     final Database database = EasyMock.createMock(Database.class);
     EasyMock.expect(database.getArticleByID(EasyMock.anyObject(UUID.class))).andReturn(null).once();
     database.setArticle(EasyMock.anyObject(Article.class));
@@ -217,6 +218,65 @@ import spark.routematch.RouteMatch;
         new JSONObject()
           .put("title", "Here is a title.")
           .put("content", "Here is some content.")
+          .toString());
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getCharacterEncoding()).andReturn(CHARSET).once();
+    EasyMock.expect(servletReq.getInputStream()).andReturn(reqBody);
+    EasyMock.replay(servletReq);
+    Request req = RequestResponseFactory.create(
+        new RouteMatch(null, ROUTE, ROUTE, null),
+        servletReq);
+    
+    final HttpServletResponse servletRes = EasyMock.createMock(HttpServletResponse.class);
+    servletRes.setStatus(201);
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(servletRes);
+    Response res = RequestResponseFactory.create(servletRes);
+    
+    final User user = EasyMock.createMock(User.class);
+    EasyMock.expect(user.getID()).andReturn(new UUID(0L, 0L)).once();
+    EasyMock.replay(user);
+    
+    final AuthToken authToken = EasyMock.createMock(AuthToken.class);
+    EasyMock.expect(authToken.getUser()).andReturn(user).once();
+    EasyMock.expect(authToken.hasClientPerms()).andReturn(true).once();
+    EasyMock.replay(authToken);
+    
+    JSONObject resBody = endpoint.doEndpointTask(req, res, authToken);
+    Assert.assertEquals(resBody.getString(Endpoint.STATUS_KEY), "ok");
+    Assert.assertEquals(resBody.getString(Endpoint.INFO_KEY), "Article created.");
+    
+    EasyMock.verify(database, servletReq, servletRes, user, authToken);
+    PowerMock.verify(Stentor.class);
+  }
+  
+  /**
+   * Tests {@link CreateArticleEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that it behaves appropriately when it is provided with input
+   * that is well-formed and otherwise valid (with tags, which are optional).
+   * 
+   * @throws Exception iff any exception is thrown during execution.
+   */
+  @Test public void testDoEndpointTask_successWithTags() throws Exception {
+    final Database database = EasyMock.createMock(Database.class);
+    EasyMock.expect(database.getArticleByID(EasyMock.anyObject(UUID.class))).andReturn(null).once();
+    database.setArticle(EasyMock.anyObject(Article.class));
+    EasyMock.expectLastCall().andAnswer(new EmptyAnswer()).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).times(2);
+    PowerMock.replay(Stentor.class);
+    
+    final ServerInputStringStream reqBody = new ServerInputStringStream(
+        new JSONObject()
+          .put("title", "Here is a title.")
+          .put("content", "Here is some content.")
+          .put("tags", new JSONArray()
+              .put("alpha")
+              .put("beta")
+              .put("gamma"))
           .toString());
     
     final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);

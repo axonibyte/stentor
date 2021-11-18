@@ -15,8 +15,11 @@
  */
 package com.axonibyte.stentor.net.restful.article;
 
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -55,17 +58,27 @@ public class CreateArticleEndpoint extends Endpoint {
       JSONObject request = new JSONObject(req.body());
       String title = request.getString(Article.TITLE_KEY);
       String content = request.getString(Article.CONTENT_KEY);
+      JSONArray tagArr = request.optJSONArray(Article.TAGS_KEY);
       
       UUID uuid = null;
       do uuid = UUID.randomUUID();
       while(Stentor.getDatabase().getArticleByID(uuid) != null);
       
-      Stentor.getDatabase().setArticle(new Article()
+      Article article = new Article()
           .setAuthor(authToken.getUser().getID())
           .setTitle(title)
           .setContent(content)
           .setID(uuid)
-          .setTimestamp(System.currentTimeMillis()));
+          .setTimestamp(System.currentTimeMillis());
+      
+      if(tagArr != null) {
+        Set<String> tags = new TreeSet<>();
+        for(int i = 0; i < tagArr.length(); i++)
+          tags.add(tagArr.getString(i));
+        article.setTags(tags);
+      }
+      
+      Stentor.getDatabase().setArticle(article);
       
       res.status(201);
       return new JSONObject()

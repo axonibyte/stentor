@@ -68,6 +68,7 @@ public class GetArticleEndpoint extends Endpoint {
         .put(Article.ID_KEY, article.getID().toString())
         .put(Article.TITLE_KEY, article.getTitle())
         .put(Article.CONTENT_KEY, article.getContent())
+        .put(Article.TAGS_KEY, article.getTags())
         .put(Article.AUTHOR_KEY, user == null ? JSONObject.NULL
             : new JSONObject()
                 .put(User.ID_KEY, user.getID().toString())

@@ -18,6 +18,8 @@ package com.axonibyte.stentor.net.restful.article;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -89,11 +91,16 @@ import spark.routematch.RouteMatch;
       String articleTitle = String.format("Article #%1$d", i);
       String articleContent = content[0] + (i % 2 == 1 ? content[1] + content[2] + content[3] : "");
       long articleTimestamp = timestamp++;
+      Set<String> tags = new TreeSet<>();
+      if(i % 2 == 0) tags.add("alpha");
+      if(i % 3 == 0) tags.add("beta");
+      if(i % 5 == 0) tags.add("gamma");
       Article article = new Article()
           .setID(articleID)
           .setAuthor(authorID)
           .setTitle(articleTitle)
           .setContent(articleContent)
+          .setTags(tags)
           .setTimestamp(articleTimestamp);
       articles.add(article);
     }
@@ -110,6 +117,7 @@ import spark.routematch.RouteMatch;
         EasyMock.expect(mockup.getTitle()).andReturn(article.getTitle()).once();
         EasyMock.expect(mockup.getContent()).andReturn(article.getContent()).once();
         EasyMock.expect(mockup.getTimestamp()).andReturn(article.getTimestamp()).once();
+        EasyMock.expect(mockup.getTags()).andReturn(article.getTags()).once();
       }
       EasyMock.replay(mockup);
       mockups.add(mockup);
@@ -147,6 +155,9 @@ import spark.routematch.RouteMatch;
       Assert.assertEquals(articleObj.getString(Article.CONTENT_KEY), i % 2 == 0 ? longContent : content[0]);
       Assert.assertEquals(articleObj.getString(Article.AUTHOR_KEY), corresponding.getAuthor().toString());
       Assert.assertEquals(articleObj.getLong(Article.TIMESTAMP_KEY), corresponding.getTimestamp());
+      Set<String> resTags = new TreeSet<>();
+      articleObj.getJSONArray(Article.TAGS_KEY).forEach(o -> resTags.add((String)o));
+      Assert.assertEquals(resTags, corresponding.getTags());
     }
     
     if(next > 1)
@@ -208,6 +219,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(BAD_PAGE_ARG).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
@@ -279,6 +291,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(BAD_LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     Request req = RequestResponseFactory.create(new RouteMatch(null, ROUTE, ROUTE, null), servletReq);
     
@@ -322,6 +335,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 10, 0, 2, 2);
@@ -351,6 +365,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(PAGE_ARG).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 10, 10, 2, 0);
@@ -380,6 +395,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(PAGE_ARG).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 0, 0, 0, 0);
@@ -409,6 +425,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 4, 0, 2, 2);
@@ -438,6 +455,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 20, 0, 2, 0);
@@ -468,6 +486,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(PAGE_ARG).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(LIMIT_ARG).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 4, 8, 2, 4);
@@ -497,6 +516,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(LIMIT_ARG).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 10, 0, 1, 2);
@@ -527,9 +547,40 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
     EasyMock.expect(servletReq.getParameter("snippet")).andReturn(LIMIT_ARG).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn(null).once();
     EasyMock.replay(servletReq);
     
     validateSuccessResponse(database, servletReq, articles, 10, 0, 3, 2);
+  }
+  
+  /**
+   * Tests {@link ListArticlesEndpoint#doEndpointTask(Request, Response, AuthToken)}
+   * to ensure that is successfully lists articles when a tag is specified.
+   * Note that in order to decouple the database logic from this unit test,
+   * the generated article mockups do not necessarily match the endpoint query
+   * arguments.
+   * 
+   * @throws EndpointException iff an {@link EndpointException} is thrown
+   *         during the execution of this test method
+   */
+  @Test public void testDoEndpointTask_successWithTag() throws EndpointException {
+    final Database database = EasyMock.createMock(Database.class);
+    final var articles = generateArticleMockups(0, 10);
+    EasyMock.expect(database.getArticlesByTag("beta")).andReturn(articles).once();
+    EasyMock.replay(database);
+    
+    PowerMock.mockStatic(Stentor.class);
+    EasyMock.expect(Stentor.getDatabase()).andReturn(database).once();
+    PowerMock.replay(Stentor.class);
+    
+    final HttpServletRequest servletReq = EasyMock.createMock(HttpServletRequest.class);
+    EasyMock.expect(servletReq.getParameter("page")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("limit")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("snippet")).andReturn(null).once();
+    EasyMock.expect(servletReq.getParameter("tag")).andReturn("beta").once();
+    EasyMock.replay(servletReq);
+    
+    validateSuccessResponse(database, servletReq, articles, 10, 0, 2, 2);
   }
   
 }

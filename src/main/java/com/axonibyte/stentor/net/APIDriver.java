@@ -32,6 +32,7 @@ import com.axonibyte.stentor.net.restful.article.CreateArticleEndpoint;
 import com.axonibyte.stentor.net.restful.article.DeleteArticleEndpoint;
 import com.axonibyte.stentor.net.restful.article.GetArticleEndpoint;
 import com.axonibyte.stentor.net.restful.article.ListArticlesEndpoint;
+import com.axonibyte.stentor.net.restful.article.ListTagsEndpoint;
 import com.axonibyte.stentor.net.restful.article.ModifyArticleEndpoint;
 import com.axonibyte.stentor.net.restful.user.CreateUserEndpoint;
 import com.axonibyte.stentor.net.restful.user.DeleteUserEndpoint;
@@ -71,6 +72,7 @@ public class APIDriver implements Runnable {
         new DeleteUserEndpoint(),
         new GetArticleEndpoint(),
         new ListArticlesEndpoint(),
+        new ListTagsEndpoint(),
         new ModifyArticleEndpoint(),
         new ModifyUserEndpoint()
     };

@@ -18,6 +18,7 @@ package com.axonibyte.stentor.persistent;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.bson.Document;
 
@@ -92,6 +93,7 @@ public class Database {
         .setContent(document.getString(Article.CONTENT_KEY))
         .setTimestamp(document.getLong(Article.TIMESTAMP_KEY))
         .setAuthor(UUID.fromString(document.getString(Article.AUTHOR_KEY)))
+        .setTags(document.getList(Article.TAGS_KEY, String.class).stream().collect(Collectors.toSet()))
         .setID(UUID.fromString(document.getString(Article.ID_KEY)));
     return null;
   }
@@ -112,6 +114,29 @@ public class Database {
           .setContent(document.getString(Article.CONTENT_KEY))
           .setTimestamp(document.getLong(Article.TIMESTAMP_KEY))
           .setAuthor(UUID.fromString(document.getString(Article.AUTHOR_KEY)))
+          .setTags(document.getList(Article.TAGS_KEY, String.class).stream().collect(Collectors.toSet()))
+          .setID(UUID.fromString(document.getString(Article.ID_KEY))));
+    return articles;
+  }
+  
+  /**
+   * Retrieves all articles, filtered by the specified tag.
+   * 
+   * @param tag the tag with which to filter articles
+   * @return a list of articles in descending order by timestamp
+   */
+  public List<Article> getArticlesByTag(String tag) {
+    MongoDatabase database = mongoClient.getDatabase(dbName);
+    MongoCollection<Document> collection = database.getCollection(COLLECTION_ARTICLE);
+    FindIterable<Document> documents = collection.find(Filters.all(Article.TAGS_KEY, tag)).sort(new BasicDBObject(Article.TIMESTAMP_KEY, -1));
+    List<Article> articles = new LinkedList<>();
+    for(Document document : documents)
+      articles.add(new Article()
+          .setTitle(document.getString(Article.TITLE_KEY))
+          .setContent(document.getString(Article.CONTENT_KEY))
+          .setTimestamp(document.getLong(Article.TIMESTAMP_KEY))
+          .setAuthor(UUID.fromString(document.getString(Article.AUTHOR_KEY)))
+          .setTags(document.getList(Article.TAGS_KEY, String.class).stream().collect(Collectors.toSet()))
           .setID(UUID.fromString(document.getString(Article.ID_KEY))));
     return articles;
   }
@@ -129,7 +154,8 @@ public class Database {
         .append(Article.TITLE_KEY, article.getTitle())
         .append(Article.CONTENT_KEY, article.getContent())
         .append(Article.TIMESTAMP_KEY, article.getTimestamp())
-        .append(Article.AUTHOR_KEY, article.getAuthor().toString());
+        .append(Article.AUTHOR_KEY, article.getAuthor().toString())
+        .append(Article.TAGS_KEY, article.getTags().stream().collect(Collectors.toList()));
     if(collection.find(Filters.eq(Article.ID_KEY, id)).first() == null)
       collection.insertOne(document);
     else collection.replaceOne(Filters.eq(Article.ID_KEY, id), document);

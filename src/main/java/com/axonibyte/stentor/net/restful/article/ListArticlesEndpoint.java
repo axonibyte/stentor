@@ -55,11 +55,12 @@ public class ListArticlesEndpoint extends Endpoint {
       int page = Integer.parseInt(req.queryParamOrDefault("page", "1"));
       int limit = Integer.parseInt(req.queryParamOrDefault("limit", "10"));
       int snippet = Integer.parseInt(req.queryParamOrDefault("snippet", "140"));
+      String tag = req.queryParams("tag");
       
       if(page < 1 || limit < 1)
         throw new EndpointException(req, "Syntax error.", 400);
       
-      List<Article> articles = Stentor.getDatabase().getArticles();
+      List<Article> articles = tag == null || tag.isEmpty() ? Stentor.getDatabase().getArticles() : Stentor.getDatabase().getArticlesByTag(tag);
       for(int i = (page - 1) * limit; i > 0 && !articles.isEmpty(); i--)
         articles.remove(0);
       
@@ -80,6 +81,7 @@ public class ListArticlesEndpoint extends Endpoint {
             .put(Article.ID_KEY, article.getID().toString())
             .put(Article.TITLE_KEY, article.getTitle())
             .put(Article.CONTENT_KEY, content)
+            .put(Article.TAGS_KEY, article.getTags())
             .put(Article.AUTHOR_KEY, article.getAuthor().toString())
             .put(Article.TIMESTAMP_KEY, article.getTimestamp()));
       }

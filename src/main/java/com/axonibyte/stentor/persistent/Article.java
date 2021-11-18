@@ -15,6 +15,8 @@
  */
 package com.axonibyte.stentor.persistent;
 
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 /**
@@ -45,6 +47,11 @@ public class Article {
   public static final String AUTHOR_KEY = "author";
   
   /**
+   * Database key associated with article tags (topics).
+   */
+  public static final String TAGS_KEY = "tags";
+  
+  /**
    * Database key associated with the article's unique identifier.
    */
   public static final String ID_KEY = "id";
@@ -53,6 +60,7 @@ public class Article {
   private UUID author = null;
   private String title = null;
   private String content = null;
+  private Set<String> tags = new TreeSet<>();
   private long timestamp = 0L;
   
   /**
@@ -152,6 +160,29 @@ public class Article {
    */
   public Article setTimestamp(long timestamp) {
     this.timestamp = timestamp;
+    return this;
+  }
+  
+  /**
+   * Retrieves the tags associated with this article.
+   * 
+   * @return an ordered set of tags
+   */
+  public Set<String> getTags() {
+    var tags = new TreeSet<String>();
+    tags.addAll(this.tags);
+    return tags;
+  }
+  
+  /**
+   * Sets the tags associated with this article.
+   * 
+   * @param tags an ordered set of tags
+   * @return this article
+   */
+  public Article setTags(Set<String> tags) {
+    this.tags.clear();
+    this.tags.addAll(tags);
     return this;
   }
   

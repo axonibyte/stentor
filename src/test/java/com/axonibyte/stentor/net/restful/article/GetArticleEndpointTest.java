@@ -15,6 +15,8 @@
  */
 package com.axonibyte.stentor.net.restful.article;
 
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -160,6 +162,10 @@ import spark.routematch.RouteMatch;
     final String path = ROUTE.replace(":article", articleID.toString());
     final String articleTitle = "ARTICLE_TITLE";
     final String articleContent = "ARTICLE_CONTENT";
+    final Set<String> articleTags = new TreeSet<>();
+    articleTags.add("alpha");
+    articleTags.add("beta");
+    articleTags.add("gamma");
     final long articleTimestamp = 1L;
     
     final Article article = EasyMock.createMock(Article.class);
@@ -167,6 +173,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(article.getID()).andReturn(articleID).once();
     EasyMock.expect(article.getTitle()).andReturn(articleTitle).once();
     EasyMock.expect(article.getContent()).andReturn(articleContent).once();
+    EasyMock.expect(article.getTags()).andReturn(articleTags).once();
     EasyMock.expect(article.getTimestamp()).andReturn(articleTimestamp).once();
     EasyMock.replay(article);
     
@@ -201,7 +208,10 @@ import spark.routematch.RouteMatch;
     Assert.assertEquals(resBody.getString(Article.TITLE_KEY), articleTitle);
     Assert.assertEquals(resBody.getString(Article.CONTENT_KEY), articleContent);
     Assert.assertEquals(resBody.getLong(Article.TIMESTAMP_KEY), articleTimestamp);
-    Assert.assertTrue(resBody.isNull(articleContent));
+    Assert.assertTrue(resBody.isNull(Article.AUTHOR_KEY));
+    Set<String> resTags = new TreeSet<>();
+    resBody.getJSONArray(Article.TAGS_KEY).forEach(o -> resTags.add((String)o));
+    Assert.assertEquals(resTags, articleTags);
     
     EasyMock.verify(article, database, servletReq, servletRes, authToken);
     PowerMock.verify(Stentor.class);
@@ -222,6 +232,10 @@ import spark.routematch.RouteMatch;
     final String articleTitle = "ARTICLE TITLE";
     final String articleContent = "ARTICLE CONTENT";
     final String userName = "BOB THE BUILDER";
+    final Set<String> articleTags = new TreeSet<>();
+    articleTags.add("alpha");
+    articleTags.add("beta");
+    articleTags.add("gamma");
     final long articleTimestamp = 1L;
     
     final Article article = EasyMock.createMock(Article.class);
@@ -229,6 +243,7 @@ import spark.routematch.RouteMatch;
     EasyMock.expect(article.getID()).andReturn(articleID).once();
     EasyMock.expect(article.getTitle()).andReturn(articleTitle).once();
     EasyMock.expect(article.getContent()).andReturn(articleContent).once();
+    EasyMock.expect(article.getTags()).andReturn(articleTags).once();
     EasyMock.expect(article.getTimestamp()).andReturn(articleTimestamp).once();
     EasyMock.replay(article);
     
@@ -270,6 +285,9 @@ import spark.routematch.RouteMatch;
     Assert.assertEquals(resBody.getLong(Article.TIMESTAMP_KEY), articleTimestamp);
     Assert.assertEquals(resBody.getJSONObject(Article.AUTHOR_KEY).getString(User.ID_KEY), userID.toString());
     Assert.assertEquals(resBody.getJSONObject(Article.AUTHOR_KEY).getString(User.USERNAME_KEY), userName);
+    Set<String> resTags = new TreeSet<>();
+    resBody.getJSONArray(Article.TAGS_KEY).forEach(o -> resTags.add((String)o));
+    Assert.assertEquals(resTags, articleTags);
     
     EasyMock.verify(article, user, database, servletReq, servletRes, authToken);
     PowerMock.verify(Stentor.class);

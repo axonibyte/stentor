@@ -15,8 +15,11 @@
  */
 package com.axonibyte.stentor.net.restful.article;
 
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -67,6 +70,13 @@ public class ModifyArticleEndpoint extends Endpoint {
         article.setTitle(request.getString(Article.TITLE_KEY));
       if(request.has(Article.CONTENT_KEY))
         article.setContent(request.getString(Article.CONTENT_KEY));
+      if(request.has(Article.TAGS_KEY)) {
+        JSONArray tagArr = request.getJSONArray(Article.TAGS_KEY);
+        Set<String> tags = new TreeSet<>();
+        for(int i = 0; i < tagArr.length(); i++)
+          tags.add(tagArr.getString(i));
+        article.setTags(tags);
+      }
       Stentor.getDatabase().setArticle(article);
       
       res.status(202);

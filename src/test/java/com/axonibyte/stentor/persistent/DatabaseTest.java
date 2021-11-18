@@ -17,7 +17,10 @@ package com.axonibyte.stentor.persistent;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.bson.Document;
 import org.easymock.EasyMock;
@@ -58,6 +61,110 @@ public class DatabaseTest {
   }
   
   /**
+   * Test {@link Database#getArticles} to ensure that, at the very least, it is
+   * pulling records in reverse order. Note: the mockup database isn't reset,
+   * so there's a chance that records already exist. Therefore, just test to
+   * see if the ones we insert now are pulled in order of timestamp.
+   */
+  @Test public void testGetArticles() {
+    final UUID[] ids = {
+        new UUID(880, -880),
+        new UUID(881, -881),
+        new UUID(882, -882)
+    };
+    
+    final Article[] articles = {
+        new Article()
+            .setID(ids[0])
+            .setAuthor(ids[0])
+            .setTitle("Article the First")
+            .setTimestamp(880L),
+        new Article()
+            .setID(ids[1])
+            .setAuthor(ids[1])
+            .setTitle("Article the Second")
+            .setTimestamp(881L),
+        new Article()
+            .setID(ids[2])
+            .setAuthor(ids[2])
+            .setTitle("Article the Third")
+            .setTimestamp(882L)
+    };
+    
+    final String[] tags = { "tau", "kappa", "epsilon" };
+    
+    for(int i = 0; i < 3; i++) {
+      Set<String> tagSet = new TreeSet<>();
+      for(int j = 0; j <= i; j++) tagSet.add(tags[j]);
+      articles[i].setTags(tagSet);
+      database.setArticle(articles[i]);
+    }
+    
+    int[] order = { -1, -1, -1 };
+    
+    var retrieved = database.getArticles();
+    for(int i = 0; i < retrieved.size(); i++) {
+      for(int j = 0; j < ids.length; j++)
+        if(retrieved.get(i).getID().equals(ids[j]))
+          order[j] = i;
+    }
+    
+    for(int i = 0; i < 3; i++) // assert reverse order
+      Assert.assertTrue(i == 2 ? order[2] > -1 : order[i] > order[i + 1]);
+  }
+  
+  /**
+   * Tests {@link Database#getArticlesByTag(String)} to see if we can pull
+   * articles that have been filtered by tag.
+   */
+  @Test public void testGetArticlesByTag() {
+    final UUID[] ids = {
+        new UUID(-880, 880),
+        new UUID(-881, 881),
+        new UUID(-882, 882)
+    };
+    
+    final Article[] articles = {
+        new Article()
+            .setID(ids[0])
+            .setAuthor(ids[0])
+            .setTitle("Article the First")
+            .setTimestamp(880L),
+        new Article()
+            .setID(ids[1])
+            .setAuthor(ids[1])
+            .setTitle("Article the Second")
+            .setTimestamp(881L),
+        new Article()
+            .setID(ids[2])
+            .setAuthor(ids[2])
+            .setTitle("Article the Third")
+            .setTimestamp(882L)
+    };
+    
+    final String[] tags = { "ed", "edd", "eddy" };
+    
+    for(int i = 0; i < 3; i++) {
+      Set<String> tagSet = new TreeSet<>();
+      for(int j = 0; j <= i; j++) tagSet.add(tags[j]);
+      articles[i].setTags(tagSet);
+      database.setArticle(articles[i]);
+    }
+    
+    var retrieved = database.getArticlesByTag("edd");
+    Assert.assertEquals(retrieved.size(), 2);
+    for(int i = 0; i < 2; i++) {
+      Article actual = retrieved.get(i);
+      Article expected = articles[2 - i];
+      Assert.assertEquals(actual.getTitle(), expected.getTitle());
+      Assert.assertEquals(actual.getContent(), expected.getContent());
+      Assert.assertEquals(actual.getAuthor(), expected.getAuthor());
+      Assert.assertEquals(actual.getTimestamp(), expected.getTimestamp());
+      Assert.assertEquals(actual.getTags(), expected.getTags());
+    }
+  }
+  
+  /**
    * Tests {@link Database#getArticleByID(UUID)} to ensure that it handles
    * queries for nonexistent articles appropriately.
    */
@@ -79,12 +186,17 @@ public class DatabaseTest {
     final UUID author = new UUID(-100, 100);
     final String title = "TITLE";
     final String content = "This is content.";
+    final Set<String> tags = new TreeSet<>();
+    tags.add("foo");
+    tags.add("bar");
+    tags.add("baz");
     final long timestamp = System.currentTimeMillis();
     
     Document doc = new Document(Article.ID_KEY, id.toString())
         .append(Article.TITLE_KEY, title)
         .append(Article.CONTENT_KEY, content)
         .append(Article.AUTHOR_KEY, author.toString())
+        .append(Article.TAGS_KEY, tags.stream().collect(Collectors.toList()))
         .append(Article.TIMESTAMP_KEY, timestamp);
     
     Field client = database.getClass().getDeclaredField("mongoClient");
@@ -100,6 +212,7 @@ public class DatabaseTest {
     Assert.assertEquals(article.getTitle(), title);
     Assert.assertEquals(article.getContent(), content);
     Assert.assertEquals(article.getTimestamp(), timestamp);
+    Assert.assertEquals(article.getTags(), tags);
   }
   
   /**
@@ -111,6 +224,10 @@ public class DatabaseTest {
     final UUID author = new UUID(-102, 102);
     final String title = "TITLE";
     final String content = "This is content.";
+    final Set<String> tags = new TreeSet<>();
+    tags.add("foo");
+    tags.add("bar");
+    tags.add("baz");
     final long timestamp = System.currentTimeMillis();
     
     {
@@ -120,6 +237,7 @@ public class DatabaseTest {
       EasyMock.expect(article.getContent()).andReturn(content).once();
       EasyMock.expect(article.getTimestamp()).andReturn(timestamp).once();
       EasyMock.expect(article.getAuthor()).andReturn(author).once();
+      EasyMock.expect(article.getTags()).andReturn(tags).once();
       EasyMock.replay(article);
       
       database.setArticle(article);
@@ -131,6 +249,7 @@ public class DatabaseTest {
     Assert.assertEquals(article.getAuthor(), author);
     Assert.assertEquals(article.getTitle(), title);
     Assert.assertEquals(article.getContent(), content);
+    Assert.assertEquals(article.getTags(), tags);
     Assert.assertEquals(article.getTimestamp(), timestamp);
   }
   
@@ -149,6 +268,13 @@ public class DatabaseTest {
     final String title2 = "ANOTHER TITLE";
     final String content1 = "This is content.";
     final String content2 = "This is more content.";
+    final Set<String> tags1 = new TreeSet<>();
+    tags1.add("foo");
+    tags1.add("bar");
+    tags1.add("baz");
+    final Set<String> tags2 = new TreeSet<>();
+    tags2.add("corge");
+    tags2.add("fred");
     final long timestamp1 = System.currentTimeMillis();
     final long timestamp2 = timestamp1 + 1000L;
     
@@ -156,6 +282,7 @@ public class DatabaseTest {
         .append(Article.TITLE_KEY, title1)
         .append(Article.CONTENT_KEY, content1)
         .append(Article.AUTHOR_KEY, author1.toString())
+        .append(Article.TAGS_KEY, tags1)
         .append(Article.TIMESTAMP_KEY, timestamp1);
     
     Field client = database.getClass().getDeclaredField("mongoClient");
@@ -172,6 +299,7 @@ public class DatabaseTest {
       EasyMock.expect(article.getContent()).andReturn(content2).once();
       EasyMock.expect(article.getTimestamp()).andReturn(timestamp2).once();
       EasyMock.expect(article.getAuthor()).andReturn(author2).once();
+      EasyMock.expect(article.getTags()).andReturn(tags2).once();
       EasyMock.replay(article);
       
       database.setArticle(article);
@@ -183,6 +311,7 @@ public class DatabaseTest {
     Assert.assertEquals(article.getAuthor(), author2);
     Assert.assertEquals(article.getTitle(), title2);
     Assert.assertEquals(article.getContent(), content2);
+    Assert.assertEquals(article.getTags(), tags2);
     Assert.assertEquals(article.getTimestamp(), timestamp2);
   }
   
@@ -195,6 +324,10 @@ public class DatabaseTest {
     final UUID author = new UUID(-102, 102);
     final String title = "TITLE";
     final String content = "This is content.";
+    final Set<String> tags = new TreeSet<>();
+    tags.add("foo");
+    tags.add("bar");
+    tags.add("baz");
     final long timestamp = System.currentTimeMillis();
     
     Article article = EasyMock.mock(Article.class);
@@ -203,6 +336,7 @@ public class DatabaseTest {
     EasyMock.expect(article.getContent()).andReturn(content).once();
     EasyMock.expect(article.getTimestamp()).andReturn(timestamp).once();
     EasyMock.expect(article.getAuthor()).andReturn(author).once();
+    EasyMock.expect(article.getTags()).andReturn(tags).once();
     EasyMock.replay(article);
       
     database.setArticle(article);
