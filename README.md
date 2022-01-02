@@ -6,7 +6,7 @@ A backend for a minimal blogging platform.
 
 ## Build
 
-You need Java 11. This project can be tested and compiled with the following command.
+You need Java 17. This project can be tested and compiled with the following command.
 
 `gradlew clean test shadowJar --info`
 

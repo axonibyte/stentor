@@ -1,0 +1,50 @@
+image: openjdk:17
+
+doMirror: &doMirror
+  name: Mirror repository
+  image: atlassian/default-image:3
+  clone:
+    enabled: false
+  script:
+    - git clone --mirror git@bitbucket.org:${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}.git
+    - cd ${BITBUCKET_REPO_SLUG}.git
+    - git push --mirror git@github.com:${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}.git
+
+doBuild: &doBuild
+  name: Build and test artifact
+  caches:
+    - gradle
+  script:
+    - bash ./gradlew clean test shadowJar --info
+  artifacts:
+    - build/libs/stentor.jar
+
+doDeploy: &doDeploy
+  name: Deploy artifact
+  clone:
+    enabled: false
+  script:
+    - >-
+      for f in build/libs/*.jar; do
+        sha256sum $f | awk '{ print $1 }' > ${f}.sha256
+        curl -v -X POST "https://${BB_PUB_USER}:${BB_PUB_SECRET}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" \
+            --form files=@"${f}" --form files=@"${f}.sha256"
+      done
+
+pipelines:
+  branches:
+    main:
+      - step:
+          <<: *doMirror
+      - step:
+          <<: *doBuild
+      - step:
+          <<: *doDeploy
+    dev:
+      - step:
+          <<: *doMirror
+      - step:
+          <<: *doBuild
+    '**':
+      - step:
+          <<: *doMirror
