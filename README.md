@@ -55,4 +55,5 @@ If either is specified, the backend stops after execution and does not spin up a
 
 ## License
 
-**This repository is subject to Version 2.0 of the [Apache License](https://apache.org/licenses/LICENSE-2.0).**
+**This repository's source code is subject to the [Blue Oak Model License 1.0.0](https://blueoakcouncil.org/license/1.0.0).**
+See [LICENSE](LICENSE), which also names the terms covering specifications, documentation and assets.
